@@ -41,6 +41,43 @@ class TornPage:
     height: int
     pieces: list[Piece]
     labels: np.ndarray   # (H, W) int32 partition map (for verification / GT)
+    adjacency: list[tuple[int, int]]   # undirected (i, j) piece-index neighbor pairs
+
+
+def _adjacency_pairs(labels: np.ndarray) -> np.ndarray:
+    """Return unique unordered raw-label neighbor pairs from a partition map.
+
+    4-connectivity: two pieces are neighbors iff they touch horizontally or
+    vertically. Vectorized: compare each pixel to its right/down neighbor, keep
+    label pairs that differ. Cost Theta(H*W) — a few ms even at 150 DPI, dwarfed
+    by the kd-tree query, so no measurable pipeline slowdown.
+    """
+    h_a, h_b = labels[:, :-1], labels[:, 1:]
+    v_a, v_b = labels[:-1, :], labels[1:, :]
+    hd, vd = h_a != h_b, v_a != v_b
+    pairs = np.concatenate(
+        [
+            np.stack([h_a[hd], h_b[hd]], axis=1),
+            np.stack([v_a[vd], v_b[vd]], axis=1),
+        ],
+        axis=0,
+    )
+    if pairs.size == 0:                       # single-piece page
+        return pairs.reshape(0, 2)
+    pairs.sort(axis=1)                        # (min, max) -> undirected
+    return np.unique(pairs, axis=0)
+
+
+def compute_adjacency(
+    labels: np.ndarray, label_to_idx: dict[int, int]
+) -> list[tuple[int, int]]:
+    """Map raw-label neighbor pairs to manifest piece indices, sorted."""
+    out = []
+    for a, b in _adjacency_pairs(labels):
+        ia, ib = label_to_idx.get(int(a)), label_to_idx.get(int(b))
+        if ia is not None and ib is not None and ia != ib:
+            out.append((ia, ib) if ia < ib else (ib, ia))
+    return sorted(set(out))
 
 
 def tear_page(
@@ -89,7 +126,14 @@ def tear_page(
             Piece(label=int(lbl), x=x0, y=y0, rgb=rgb, mask=sub_mask)
         )
 
-    return TornPage(width=W, height=H, pieces=pieces, labels=labels)
+    # Piece-index <-> raw-label map from the pieces we actually emitted, so
+    # adjacency indices line up exactly with the manifest's piece ordering.
+    label_to_idx = {p.label: i for i, p in enumerate(pieces)}
+    adjacency = compute_adjacency(labels, label_to_idx)
+
+    return TornPage(
+        width=W, height=H, pieces=pieces, labels=labels, adjacency=adjacency
+    )
 
 
 def verify_partition(torn: TornPage) -> dict:

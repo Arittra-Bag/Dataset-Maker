@@ -49,6 +49,10 @@ def build_zip(
                 "index": pi,
                 "width": page.width,
                 "height": page.height,
+                # Undirected neighbor pairs (piece-index i, j) = which fragments
+                # share a torn border. Positive pairs for pairwise/graph stitching
+                # models; non-listed pairs are negatives.
+                "adjacency": [[int(i), int(j)] for i, j in page.adjacency],
                 "pieces": [],
             }
             for k, piece in enumerate(page.pieces):
@@ -71,6 +75,10 @@ _README = """Dataset-Maker export
 =====================
 Each page was torn into NON-OVERLAPPING fragments (a strict partition: every
 pixel belongs to exactly one piece). Fragments sit on a black background.
+
+Each page also carries `adjacency`: a list of [i, j] piece-index pairs that
+share a torn border (4-connectivity, undirected, i < j). Use as positive pairs
+for pairwise/graph-based stitching models; any pair not listed is a negative.
 
 To reassemble a page (stitching ground truth):
     import json

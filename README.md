@@ -68,16 +68,38 @@ PDF ──▶ render @DPI ──▶ fit/slice to A4 ──▶ priority queue (ch
 ```
 pieces/page_0001/piece_000.png   # fragment on black bg
 manifest.json                    # per-piece {file, x, y, w, h} = stitching GT
+                                 # + per-page adjacency [[i, j], ...] neighbor pairs
 README.txt                       # reassembly snippet
 ```
 
+Each page also lists **`adjacency`** — undirected `[i, j]` piece-index pairs that
+share a torn border (4-connectivity). Use as positive pairs for pairwise /
+graph-based stitching models (Deepzzle / PairingNet style); any unlisted pair is
+a negative. Computed in one vectorized `Θ(H·W)` pass from the partition map — no
+measurable pipeline overhead.
+
 ## Run locally
 
+Use **Python 3.10–3.12**. Python 3.13/3.14 have no PyMuPDF wheel yet and fall
+back to a source build.
+
 ```bash
+python3.11 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 python app.py            # http://127.0.0.1:7860
 pytest -q                # invariant + queue tests
 ```
+
+### Pinned web stack (don't loosen)
+
+`gradio==4.44.1` needs a matching server stack. Newer auto-resolved versions
+break it, so these are pinned in `requirements.txt`:
+
+| pin | why |
+|-----|-----|
+| `fastapi==0.112.4` / `starlette==0.38.6` | starlette ≥0.29 reordered `TemplateResponse` args → gradio passes a dict as template name → `TypeError: unhashable type: 'dict'` on every page load |
+| `huggingface_hub==0.25.2` | hub ≥1.0 removed `HfFolder` that gradio 4.44 imports |
+| `pydantic==2.10.6` | pydantic ≥2.11 emits bool `additionalProperties` → gradio_client 1.3.0 `get_api_info()` crashes |
 
 ## Layout
 

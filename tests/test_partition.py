@@ -1,7 +1,7 @@
 """No-overlap / full-coverage invariant tests — the dataset's core guarantee."""
 import numpy as np
 
-from src.tearing import tear_page, verify_partition
+from src.tearing import compute_adjacency, tear_page, verify_partition
 
 
 def _page(h=400, w=300):
@@ -37,3 +37,36 @@ def test_reproducible_same_seed():
     a = tear_page(p, 12, seed=5, noise_strength=20, noise_scale=60).labels
     b = tear_page(p, 12, seed=5, noise_strength=20, noise_scale=60).labels
     assert np.array_equal(a, b)
+
+
+def test_adjacency_known_grid():
+    # 3x3 label map: pieces 0,1,2 all mutually touch.
+    labels = np.array([[0, 0, 1],
+                       [0, 2, 1],
+                       [2, 2, 1]], dtype=np.int32)
+    adj = compute_adjacency(labels, {0: 0, 1: 1, 2: 2})
+    assert adj == [(0, 1), (0, 2), (1, 2)]
+
+
+def test_adjacency_invariants_on_real_page():
+    torn = tear_page(_page(), n_pieces=16, seed=3,
+                     noise_strength=25, noise_scale=80)
+    n = len(torn.pieces)
+    adj = torn.adjacency
+    # undirected, deduped, sorted, in-range, no self-loops
+    assert adj == sorted(set(adj))
+    for i, j in adj:
+        assert 0 <= i < j < n
+    # partition over a connected page -> adjacency graph is connected
+    seen = set()
+    stack = [0]
+    nbrs = {k: set() for k in range(n)}
+    for i, j in adj:
+        nbrs[i].add(j); nbrs[j].add(i)
+    while stack:
+        u = stack.pop()
+        if u in seen:
+            continue
+        seen.add(u)
+        stack.extend(nbrs[u] - seen)
+    assert len(seen) == n          # every piece reachable

@@ -1,6 +1,8 @@
 gradio==4.44.1
 huggingface_hub==0.25.2
 pydantic==2.10.6
+fastapi==0.112.4
+starlette==0.38.6
 PyMuPDF==1.24.10
 numpy==1.26.4
 scipy==1.13.1
