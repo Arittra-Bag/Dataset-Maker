@@ -116,7 +116,9 @@ def generate(
         f"uncovered={report['uncovered_pixels']})"
     )
     progress(1.0, desc="Done")
-    return status, _pieces_gallery(pages), out_path
+    # Order: gallery, zip, status. Status is consumed by a chained .then() with
+    # progress hidden, so no progress bar paints over the status text strip.
+    return _pieces_gallery(pages), out_path, status
 
 
 def clear_all():
@@ -127,10 +129,24 @@ def clear_all():
     return None, status, None, None
 
 
+# Cap the preview gallery and scroll *inside* it. Gradio 4.44's Gallery `height`
+# caps the root but the inner thumbnail grid (.grid-wrap) overflows the page
+# instead of scrolling, so force overflow on the inner container directly.
+_GALLERY_CSS = """
+#piece-gallery { max-height: 70vh; }
+#piece-gallery .grid-wrap,
+#piece-gallery .thumbnails {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+"""
+
+
 def build_ui(theme_name: str = config.DEFAULT_THEME) -> gr.Blocks:
     with gr.Blocks(
         theme=_resolve_theme(theme_name),
         title="Dataset-Maker · Torn-page stitching dataset",
+        css=_GALLERY_CSS,
     ) as demo:
         gr.Markdown(
             "# 🧩 Dataset-Maker\n"
@@ -169,15 +185,25 @@ def build_ui(theme_name: str = config.DEFAULT_THEME) -> gr.Blocks:
                 status = gr.Markdown("Upload a PDF and hit **Generate**.")
                 gallery = gr.Gallery(
                     label="Torn pieces (preview)", columns=6, height=420,
-                    object_fit="contain",
+                    object_fit="contain", elem_id="piece-gallery",
                 )
                 zip_out = gr.File(label="Download dataset (.zip)")
+
+        # Status flows through a State, then into the Markdown via a hidden-
+        # progress .then() — keeps the progress bars on gallery + zip only,
+        # not over the thin status text (4.44 has no per-output show_progress).
+        status_state = gr.State("")
 
         run.click(
             generate,
             inputs=[pdf_in, dpi, n_pieces, noise_strength, noise_scale, lossy, seed],
-            outputs=[status, gallery, zip_out],
+            outputs=[gallery, zip_out, status_state],
             concurrency_limit=config.WORKER_CONCURRENCY,  # heavy job throttle
+        ).then(
+            lambda s: s,
+            inputs=status_state,
+            outputs=status,
+            show_progress="hidden",
         )
         clear.click(
             clear_all,
@@ -198,4 +224,4 @@ demo.queue(
 )
 
 if __name__ == "__main__":
-    demo.launch()
+    demo.launch(share=True)
