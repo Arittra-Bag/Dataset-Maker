@@ -1,4 +1,4 @@
-"""Dataset-Maker — Gradio web app (HuggingFace Spaces ready).
+"""Dataset-Maker - Gradio web app (HuggingFace Spaces ready).
 
 Upload a PDF -> each page is rendered to A4, torn into NON-OVERLAPPING fragments
 on a black background, and packaged as a ZIP with stitching ground truth.
@@ -66,6 +66,10 @@ def generate(
     if pdf_file is None:
         raise gr.Error("Upload a PDF first.")
 
+    # Drop temp files from the previous run so disk stays at steady state
+    # (~1 ZIP) instead of growing every generate. HF free-tier disk is small.
+    workspace.clear_all()
+
     progress(0.02, desc="Reading PDF…")
     with open(pdf_file, "rb") as fh:
         pdf_bytes = fh.read()
@@ -82,6 +86,8 @@ def generate(
         master_seed=int(seed),
         progress=lambda f, m: progress(0.05 + 0.8 * f, desc=m),
     )
+    # Input PDF is fully rendered into `pages` now; free it immediately.
+    workspace.discard(tmp_pdf)
 
     # Verify the no-overlap invariant on the first page (sanity gate).
     report = verify_partition(pages[0])
@@ -129,7 +135,7 @@ def build_ui(theme_name: str = config.DEFAULT_THEME) -> gr.Blocks:
         gr.Markdown(
             "# 🧩 Dataset-Maker\n"
             "Tear PDF pages into **non-overlapping** torn fragments for "
-            "image-stitching datasets. Every pixel lands in exactly one piece — "
+            "image-stitching datasets. Every pixel lands in exactly one piece - "
             "guaranteed by a domain-warped Voronoi partition."
         )
         with gr.Row():

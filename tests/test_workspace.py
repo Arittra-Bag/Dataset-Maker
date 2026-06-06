@@ -17,6 +17,16 @@ def test_new_temp_tracked_then_cleared():
     assert workspace.tracked_count() == 0
 
 
+def test_discard_unlinks_and_untracks():
+    p = workspace.new_temp(suffix=".pdf")
+    before = workspace.tracked_count()
+    assert workspace.discard(p) is True
+    assert not os.path.exists(p)
+    assert workspace.tracked_count() == before - 1
+    # idempotent: discarding again is harmless
+    assert workspace.discard(p) is False
+
+
 def test_clear_all_tolerates_missing_file():
     p = workspace.new_temp(suffix=".tmp")
     os.remove(p)                      # vanish underneath the registry

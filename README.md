@@ -21,12 +21,12 @@ Built to run on the **HuggingFace Spaces free tier** (Gradio SDK).
 
 ## The guarantee: zero overlap
 
-The pieces form a strict **partition** of the page — every pixel belongs to
+The pieces form a strict **partition** of the page - every pixel belongs to
 **exactly one** fragment, so pieces never overlap and together cover the page
 exactly. That makes the `(x, y)` offset of each piece an exact stitching label.
 
 How: instead of drawing blobs (which overlap), we assign each pixel to its
-**nearest seed point** (`argmin`). That is a Voronoi tessellation — already a
+**nearest seed point** (`argmin`). That is a Voronoi tessellation - already a
 perfect partition. To make edges look *torn* instead of straight, we
 **domain-warp** the pixel grid with value noise *before* the nearest-seed test.
 Warping the query points (not the rule) keeps the result a partition while
@@ -52,15 +52,15 @@ PDF ──▶ render @DPI ──▶ fit/slice to A4 ──▶ priority queue (ch
 
 ## Performance notes
 
-* **Gradio queue** — `demo.queue(max_size, default_concurrency_limit)` caps load
+* **Gradio queue** - `demo.queue(max_size, default_concurrency_limit)` caps load
   for the 2-vCPU free tier; the heavy event has its own `concurrency_limit`.
-* **Priority queue** (`src/queue_manager.py`) — binary min-heap, `push`/`pop`
+* **Priority queue** (`src/queue_manager.py`) - binary min-heap, `push`/`pop`
   `O(log n)`, `peek` `Θ(1)`, space `Θ(n)`. Orders page jobs cheap-first so the
   user sees early progress and tail latency drops. Best case `Ω(1)` per op; no
   comparison heap beats `Ω(log n)` amortized under interleaved ops.
-* **Vectorized partition** — SciPy `cKDTree` nearest-seed query is
+* **Vectorized partition** - SciPy `cKDTree` nearest-seed query is
   `O(H·W·log S)`; mask extraction is `Θ(H·W)`.
-* **Export** — tight bbox crop + PNG `optimize`/`compress_level=9`; optional
+* **Export** - tight bbox crop + PNG `optimize`/`compress_level=9`; optional
   median-cut palette for smaller archives.
 
 ## Output layout
@@ -72,10 +72,10 @@ manifest.json                    # per-piece {file, x, y, w, h} = stitching GT
 README.txt                       # reassembly snippet
 ```
 
-Each page also lists **`adjacency`** — undirected `[i, j]` piece-index pairs that
+Each page also lists **`adjacency`** - undirected `[i, j]` piece-index pairs that
 share a torn border (4-connectivity). Use as positive pairs for pairwise /
 graph-based stitching models (Deepzzle / PairingNet style); any unlisted pair is
-a negative. Computed in one vectorized `Θ(H·W)` pass from the partition map — no
+a negative. Computed in one vectorized `Θ(H·W)` pass from the partition map - no
 measurable pipeline overhead.
 
 ## Run locally

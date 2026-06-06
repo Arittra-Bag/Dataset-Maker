@@ -7,7 +7,7 @@ on HF still shares this process). UI-free so `src/` stays testable.
 Note: this clears the *file cache* we create. Gradio's own request queue is
 per-request and transient (a handler can't flush other users' pending events),
 and the priority queue in `queue_manager` is built and drained within a single
-`process_pdf` call — neither leaves persistent state to clear.
+`process_pdf` call - neither leaves persistent state to clear.
 """
 from __future__ import annotations
 
@@ -34,11 +34,28 @@ def register(path: str) -> None:
         _tracked.add(path)
 
 
+def discard(path: str) -> bool:
+    """Unlink one tracked file early (e.g. an input PDF after it's loaded).
+
+    Returns True if the file was removed. Untracks regardless so a vanished
+    file doesn't linger in the registry.
+    """
+    with _lock:
+        _tracked.discard(path)
+    try:
+        os.remove(path)
+        return True
+    except OSError:
+        return False
+
+
 def clear_all() -> int:
     """Unlink every tracked temp file. Returns count actually removed."""
     removed = 0
     with _lock:
-        for path in list(_tracked):
+        # list() snapshot is required: we mutate _tracked (discard) in-loop.
+        # Iterating the set directly -> "Set changed size during iteration".
+        for path in list(_tracked):  # NOSONAR python:S7504 false positive
             try:
                 os.remove(path)
                 removed += 1

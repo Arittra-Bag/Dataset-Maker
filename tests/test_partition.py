@@ -1,4 +1,4 @@
-"""No-overlap / full-coverage invariant tests — the dataset's core guarantee."""
+"""No-overlap / full-coverage invariant tests - the dataset's core guarantee."""
 import numpy as np
 
 from src.tearing import compute_adjacency, tear_page, verify_partition

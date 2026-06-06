@@ -49,7 +49,7 @@ def _adjacency_pairs(labels: np.ndarray) -> np.ndarray:
 
     4-connectivity: two pieces are neighbors iff they touch horizontally or
     vertically. Vectorized: compare each pixel to its right/down neighbor, keep
-    label pairs that differ. Cost Theta(H*W) — a few ms even at 150 DPI, dwarfed
+    label pairs that differ. Cost Theta(H*W) - a few ms even at 150 DPI, dwarfed
     by the kd-tree query, so no measurable pipeline slowdown.
     """
     h_a, h_b = labels[:, :-1], labels[:, 1:]
