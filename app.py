@@ -23,10 +23,24 @@ from src.tearing import verify_partition
 
 
 def _resolve_theme(name: str):
+    """Resolve a registry theme, falling back gracefully across Gradio versions.
+
+    Some themes (Ocean, Citrus) only exist in Gradio 5+. On older Gradio we fall
+    back to Default rather than crashing at startup.
+    """
     cls_name, kwargs = config.THEME_REGISTRY.get(
         name, config.THEME_REGISTRY[config.DEFAULT_THEME]
     )
-    return getattr(gr.themes, cls_name)(**kwargs)
+    cls = getattr(gr.themes, cls_name, None) or getattr(gr.themes, "Default")
+    return cls(**kwargs)
+
+
+def available_themes() -> list[str]:
+    """Registry themes actually present in the installed Gradio build."""
+    return [
+        name for name, (cls, _) in config.THEME_REGISTRY.items()
+        if getattr(gr.themes, cls, None) is not None
+    ]
 
 
 def _pieces_gallery(pages, max_pieces: int = 60):

@@ -38,7 +38,7 @@ THEME_REGISTRY = {
     "Citrus": ("Citrus", {}),
     "Default": ("Default", {}),
 }
-DEFAULT_THEME = "Ocean"
+DEFAULT_THEME = "Soft"   # present in Gradio 4 and 5; Ocean/Citrus are 5-only
 
 
 def a4_pixels(dpi: int) -> tuple[int, int]:
