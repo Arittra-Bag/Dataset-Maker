@@ -24,7 +24,10 @@ def encode_piece(rgb: np.ndarray, lossy: bool = False, colors: int = 64) -> byte
         # Median-cut palette; black background collapses to one palette entry.
         img = img.quantize(colors=max(2, min(256, colors)), method=Image.MEDIANCUT)
     buf = io.BytesIO()
-    img.save(buf, format="PNG", optimize=True, compress_level=9)
+    # compress_level=6 (zlib default) instead of optimize=True/level 9: the latter
+    # is far slower per piece for ~no size gain on mostly-black fragments, which
+    # dominates pack time when there are hundreds of pieces.
+    img.save(buf, format="PNG", compress_level=6)
     return buf.getvalue()
 
 

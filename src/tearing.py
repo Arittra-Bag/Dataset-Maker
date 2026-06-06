@@ -19,6 +19,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
+from scipy.ndimage import find_objects
 from scipy.spatial import cKDTree
 
 from .noise import value_noise
@@ -111,19 +112,23 @@ def tear_page(
     _, flat_labels = tree.query(query, k=1, workers=-1)
     labels = flat_labels.reshape(H, W).astype(np.int32)
 
+    # Bounding boxes for every label in ONE pass (Theta(H*W)) instead of a
+    # full-array `labels == lbl` scan per piece (O(pieces*H*W) -> the old hot
+    # spot at high DPI / many pieces). find_objects indexes by label value, so
+    # shift +1 (0 is its "background" sentinel; our labels are 0-based).
+    slices = find_objects(labels + 1)
+
     pieces: list[Piece] = []
-    for lbl in np.unique(labels):
-        mask = labels == lbl
-        ys_idx, xs_idx = np.nonzero(mask)
-        if ys_idx.size == 0:
+    for lbl, sl in enumerate(slices):
+        if sl is None:                       # label value absent from the map
             continue
-        y0, y1 = int(ys_idx.min()), int(ys_idx.max()) + 1
-        x0, x1 = int(xs_idx.min()), int(xs_idx.max()) + 1
-        sub_mask = mask[y0:y1, x0:x1]
+        y0, y1 = sl[0].start, sl[0].stop
+        x0, x1 = sl[1].start, sl[1].stop
+        sub_mask = labels[y0:y1, x0:x1] == lbl   # mask only over the bbox
         rgb = np.zeros((y1 - y0, x1 - x0, 3), dtype=np.uint8)   # black background
         rgb[sub_mask] = page_rgb[y0:y1, x0:x1][sub_mask]
         pieces.append(
-            Piece(label=int(lbl), x=x0, y=y0, rgb=rgb, mask=sub_mask)
+            Piece(label=int(lbl), x=int(x0), y=int(y0), rgb=rgb, mask=sub_mask)
         )
 
     # Piece-index <-> raw-label map from the pieces we actually emitted, so
