@@ -4,11 +4,9 @@ Kept UI-free so it is unit-testable and reusable from a CLI or batch worker.
 """
 from __future__ import annotations
 
-import os
-import tempfile
 from typing import Callable
 
-from . import config
+from . import config, workspace
 from .pdf_loader import load_pdf_pages
 from .queue_manager import PriorityJobQueue, page_priority
 from .tearing import TornPage, tear_page
@@ -59,8 +57,8 @@ def process_pdf(
 
 
 def save_temp_pdf(file_bytes: bytes) -> str:
-    """Persist uploaded bytes to a temp file PyMuPDF can open."""
-    fd, path = tempfile.mkstemp(suffix=".pdf")
-    with os.fdopen(fd, "wb") as fh:
+    """Persist uploaded bytes to a tracked temp file PyMuPDF can open."""
+    path = workspace.new_temp(suffix=".pdf")
+    with open(path, "wb") as fh:
         fh.write(file_bytes)
     return path

@@ -10,12 +10,10 @@ Performance:
 """
 from __future__ import annotations
 
-import tempfile
-
 import gradio as gr
 import numpy as np
 
-from src import config
+from src import config, workspace
 from src.optimizer import encode_preview
 from src.packager import build_zip
 from src.pipeline import process_pdf, save_temp_pdf
@@ -102,7 +100,7 @@ def generate(
         noise_scale=float(noise_scale),
         lossy=lossy,
     )
-    out_path = tempfile.mkstemp(suffix="_dataset.zip")[1]
+    out_path = workspace.new_temp(suffix="_dataset.zip")
     with open(out_path, "wb") as fh:
         fh.write(zip_bytes)
 
@@ -113,6 +111,14 @@ def generate(
     )
     progress(1.0, desc="Done")
     return status, _pieces_gallery(pages), out_path
+
+
+def clear_all():
+    """Delete tracked temp files (PDFs + ZIPs) and reset the UI outputs."""
+    removed = workspace.clear_all()
+    status = f"🧹 Cleared {removed} temp file(s). Upload a PDF and hit **Generate**."
+    # outputs order: pdf_in, status, gallery, zip_out
+    return None, status, None, None
 
 
 def build_ui(theme_name: str = config.DEFAULT_THEME) -> gr.Blocks:
@@ -150,7 +156,9 @@ def build_ui(theme_name: str = config.DEFAULT_THEME) -> gr.Blocks:
                     lossy = gr.Checkbox(
                         value=False, label="Lossy palette PNG (smaller ZIP)"
                     )
-                run = gr.Button("Generate dataset", variant="primary")
+                with gr.Row():
+                    run = gr.Button("Generate dataset", variant="primary")
+                    clear = gr.Button("Clear all", variant="secondary")
             with gr.Column(scale=2):
                 status = gr.Markdown("Upload a PDF and hit **Generate**.")
                 gallery = gr.Gallery(
@@ -164,6 +172,11 @@ def build_ui(theme_name: str = config.DEFAULT_THEME) -> gr.Blocks:
             inputs=[pdf_in, dpi, n_pieces, noise_strength, noise_scale, lossy, seed],
             outputs=[status, gallery, zip_out],
             concurrency_limit=config.WORKER_CONCURRENCY,  # heavy job throttle
+        )
+        clear.click(
+            clear_all,
+            inputs=None,
+            outputs=[pdf_in, status, gallery, zip_out],
         )
         gr.Markdown(
             "Pieces sit on black backgrounds; `manifest.json` carries each "
