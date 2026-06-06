@@ -62,7 +62,8 @@ def test_adjacency_invariants_on_real_page():
     stack = [0]
     nbrs = {k: set() for k in range(n)}
     for i, j in adj:
-        nbrs[i].add(j); nbrs[j].add(i)
+        nbrs[i].add(j)
+        nbrs[j].add(i)
     while stack:
         u = stack.pop()
         if u in seen:

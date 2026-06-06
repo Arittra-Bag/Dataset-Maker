@@ -4,8 +4,6 @@ All tunables live here so the UI, workers and tests share one source of truth.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 # --- A4 geometry -----------------------------------------------------------
 # A4 = 210 x 297 mm. Pixel size scales with DPI: px = mm / 25.4 * dpi.
 A4_MM = (210.0, 297.0)

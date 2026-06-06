@@ -11,7 +11,6 @@ Performance:
 from __future__ import annotations
 
 import gradio as gr
-import numpy as np
 
 from src import config, workspace
 from src.optimizer import encode_preview

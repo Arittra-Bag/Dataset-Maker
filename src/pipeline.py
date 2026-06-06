@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from typing import Callable
 
-from . import config, workspace
+from . import workspace
 from .pdf_loader import load_pdf_pages
 from .queue_manager import PriorityJobQueue, page_priority
 from .tearing import TornPage, tear_page
