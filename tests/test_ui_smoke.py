@@ -48,10 +48,28 @@ def test_generate_then_inspect_pages():
     assert len(page2) == 7
     assert page2[4] == expected_rows
 
-    cleared = handlers.clear_all()
+    cleared = handlers.clear_session(view)
     assert cleared[0] is None
     assert cleared[1] is None
     assert not os.path.exists(zip_path)
+
+
+def test_cleanup_is_scoped_to_the_session():
+    from src import workspace
+
+    other = workspace.new_temp(suffix="_dataset.zip")      # another session, mid-run
+    first, *_ = handlers.generate(
+        handlers.load_sample(), 72, 6, 20.0, 60.0, False, 1, progress=_noop,
+    )
+    second, *_ = handlers.generate(
+        handlers.load_sample(), 72, 6, 20.0, 60.0, False, 2, first, progress=_noop,
+    )
+    assert not os.path.exists(first.zip_path)             # own previous export dropped
+    assert os.path.exists(second.zip_path)
+    handlers.clear_session(second)
+    assert not os.path.exists(second.zip_path)
+    assert os.path.exists(other)                          # never touched
+    workspace.discard(other)
 
 
 def test_generate_without_pdf_errors():

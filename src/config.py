@@ -24,6 +24,7 @@ MAX_PAGES_PER_PDF = 60      # guardrail for the HF free tier (CPU/RAM bound)
 MAX_UPLOAD_MB = 50
 QUEUE_MAX_SIZE = 32         # Gradio request queue cap
 WORKER_CONCURRENCY = 1      # HF free tier = 2 vCPU; keep 1 heavy job at a time
+TEMP_FILE_TTL_S = 3600      # abandoned temp PDFs/ZIPs + Gradio cache copies swept after this
 
 
 def a4_pixels(dpi: int) -> tuple[int, int]:

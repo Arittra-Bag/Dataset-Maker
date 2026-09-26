@@ -21,8 +21,8 @@ def build_ui() -> gr.Blocks:
         title="Dataset-Maker",
         css=CSS,
         # Gradio copies every returned file/image into its cache and never
-        # frees it by default; sweep hourly, dropping anything older than 1 h.
-        delete_cache=(3600, 3600),
+        # frees it by default; sweep it on the same TTL as our temp files.
+        delete_cache=(config.TEMP_FILE_TTL_S, config.TEMP_FILE_TTL_S),
     ) as demo:
         gr.HTML(content.HEADER_HTML)
         with gr.Accordion("How each guarantee is enforced", open=False):
@@ -147,7 +147,7 @@ def build_ui() -> gr.Blocks:
 
         run_btn.click(
             handlers.generate,
-            inputs=[pdf_in, dpi, n_pieces, noise_strength, noise_scale, lossy, seed],
+            inputs=[pdf_in, dpi, n_pieces, noise_strength, noise_scale, lossy, seed, state],
             outputs=[state, src_img, part_img, gallery, zip_out],
             concurrency_limit=config.WORKER_CONCURRENCY,  # heavy job throttle
             api_name="generate",
@@ -165,8 +165,8 @@ def build_ui() -> gr.Blocks:
             show_progress="minimal",
         )
         clear_btn.click(
-            handlers.clear_all,
-            inputs=None,
+            handlers.clear_session,
+            inputs=state,
             outputs=[pdf_in, state, src_img, part_img, adj_img, gallery, gt_table,
                      page_meta, adj_code, manifest_code, zip_out, zip_table, summary, page_dd],
             show_progress="hidden",

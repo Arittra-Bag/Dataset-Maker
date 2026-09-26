@@ -49,6 +49,7 @@ class RunView:
     summary_html: str
     manifest_json: str
     zip_rows: list[list]
+    zip_path: str          # this session's export; freed by its next Generate/Clear or the TTL sweep
 
 
 # --------------------------------------------------------------------------
@@ -140,14 +141,17 @@ def _page_choices(view: RunView):
 # Event handlers
 # --------------------------------------------------------------------------
 def generate(pdf_file, dpi, n_pieces, noise_strength, noise_scale, lossy, seed,
-             progress=gr.Progress()):
+             view=None, progress=gr.Progress()):
     """Run the pipeline. Returns (state, source, partition, gallery, zip)."""
     if pdf_file is None:
         raise gr.Error("Upload a PDF first (or click 'Load sample PDF').")
 
-    # Drop temp files from the previous run so disk stays at steady state
-    # (~1 ZIP) instead of growing every generate. HF free-tier disk is small.
-    workspace.clear_all()
+    # Keep disk bounded on the shared server without touching other sessions'
+    # in-flight files: drop this session's previous export, then anything
+    # abandoned for a full TTL. HF free-tier disk is small.
+    if view is not None:
+        workspace.discard(view.zip_path)
+    workspace.clear_stale(config.TEMP_FILE_TTL_S)
 
     progress(0.02, desc="Reading PDF…")
     with open(pdf_file, "rb") as fh:
@@ -198,6 +202,7 @@ def generate(pdf_file, dpi, n_pieces, noise_strength, noise_scale, lossy, seed,
         summary_html=_summary_html(run.reports, timings, int(n_pieces), len(run.zip_bytes)),
         manifest_json=format_json(manifest_excerpt(run.manifest)),
         zip_rows=[[g["path"], g["files"], g["bytes"]] for g in zip_listing(run.zip_bytes)],
+        zip_path=out_path,
     )
     source, partition, _, thumbs, *_ = _page_views(view, 0)
     progress(1.0, desc="Done")
@@ -227,9 +232,14 @@ def show_page(view: RunView | None, page_index):
     return _page_views(view, int(page_index))
 
 
-def clear_all():
-    """Delete tracked temp files (PDFs + ZIPs) and reset every output."""
-    workspace.clear_all()
+def clear_session(view: RunView | None):
+    """Delete this session's export and reset every output.
+
+    Never calls workspace.clear_all(): the registry is process-wide and would
+    unlink other sessions' in-flight files.
+    """
+    if view is not None:
+        workspace.discard(view.zip_path)
     return (
         None,                  # pdf_in
         None,                  # state
