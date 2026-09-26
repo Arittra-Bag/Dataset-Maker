@@ -43,6 +43,7 @@ class TornPage:
     pieces: list[Piece]
     labels: np.ndarray   # (H, W) int32 partition map (for verification / GT)
     adjacency: list[tuple[int, int]]   # undirected (i, j) piece-index neighbor pairs
+    seed: int | None = None            # RNG seed this page was torn with
 
 
 def _adjacency_pairs(labels: np.ndarray) -> np.ndarray:
@@ -137,7 +138,8 @@ def tear_page(
     adjacency = compute_adjacency(labels, label_to_idx)
 
     return TornPage(
-        width=W, height=H, pieces=pieces, labels=labels, adjacency=adjacency
+        width=W, height=H, pieces=pieces, labels=labels, adjacency=adjacency,
+        seed=int(seed),
     )
 
 

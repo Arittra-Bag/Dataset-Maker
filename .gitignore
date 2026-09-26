@@ -11,3 +11,6 @@ tmp/
 .gradio/
 flagged/
 .pytest_cache/
+
+# bundled sample input (regenerate: python scripts/make_assets.py)
+!assets/sample.pdf

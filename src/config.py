@@ -1,4 +1,4 @@
-"""Central configuration: A4 geometry, defaults, theme registry.
+"""Central configuration: A4 geometry, defaults, limits.
 
 All tunables live here so the UI, workers and tests share one source of truth.
 """
@@ -24,19 +24,7 @@ MAX_PAGES_PER_PDF = 60      # guardrail for the HF free tier (CPU/RAM bound)
 MAX_UPLOAD_MB = 50
 QUEUE_MAX_SIZE = 32         # Gradio request queue cap
 WORKER_CONCURRENCY = 1      # HF free tier = 2 vCPU; keep 1 heavy job at a time
-
-# --- Theme registry (Gradio built-ins, see theming guide) ------------------
-# name -> (gr.themes class name, kwargs). Resolved lazily in app.py to avoid
-# importing gradio inside worker/test code paths.
-THEME_REGISTRY = {
-    "Ocean": ("Ocean", {}),
-    "Soft": ("Soft", {}),
-    "Glass": ("Glass", {}),
-    "Monochrome": ("Monochrome", {}),
-    "Citrus": ("Citrus", {}),
-    "Default": ("Default", {}),
-}
-DEFAULT_THEME = "Soft"   # present in Gradio 4 and 5; Ocean/Citrus are 5-only
+TEMP_FILE_TTL_S = 3600      # abandoned temp PDFs/ZIPs + Gradio cache copies swept after this
 
 
 def a4_pixels(dpi: int) -> tuple[int, int]:
