@@ -321,7 +321,7 @@ def zip_listing(zip_bytes: bytes) -> list[dict]:
     return list(groups.values())
 
 
-_INNERMOST = re.compile(r"(\[|\{)([^\[\]{}]*?)(\]|\})")
+_INNERMOST = re.compile(r"([\[{])([^\[\]{}]*?)([\]}])")
 
 
 def format_json(obj) -> str:
