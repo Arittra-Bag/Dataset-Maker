@@ -145,6 +145,12 @@ def generate(pdf_file, dpi, n_pieces, noise_strength, noise_scale, lossy, seed,
     """Run the pipeline. Returns (state, source, partition, gallery, zip)."""
     if pdf_file is None:
         raise gr.Error("Upload a PDF first (or click 'Load sample PDF').")
+    # Gradio 4.44 does not enforce slider bounds server-side, so API callers
+    # can send any count; reject before spending minutes tearing.
+    if not config.MIN_PIECES <= int(n_pieces) <= config.MAX_PIECES:
+        raise gr.Error(
+            f"Fragments per page must be between {config.MIN_PIECES} and {config.MAX_PIECES}."
+        )
 
     # Keep disk bounded on the shared server without touching other sessions'
     # in-flight files: drop this session's previous export, then anything

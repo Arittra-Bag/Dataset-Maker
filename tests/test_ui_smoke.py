@@ -72,6 +72,14 @@ def test_cleanup_is_scoped_to_the_session():
     workspace.discard(other)
 
 
+@pytest.mark.parametrize("n_pieces", [1, 257, 70000])
+def test_generate_rejects_out_of_range_piece_count(n_pieces):
+    # API clients bypass the slider; must fail fast with a readable gr.Error.
+    with pytest.raises(gr.Error, match="between 2 and 256"):
+        handlers.generate(handlers.load_sample(), 72, n_pieces, 20.0, 60.0, False, 0,
+                          progress=_noop)
+
+
 def test_generate_without_pdf_errors():
     with pytest.raises(gr.Error):
         handlers.generate(None, 72, 12, 20.0, 60.0, False, 0, progress=_noop)
