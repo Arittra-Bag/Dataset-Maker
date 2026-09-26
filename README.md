@@ -197,7 +197,9 @@ tests/                 invariants, determinism, manifest, round-trip, UI smoke
   for the 2-vCPU free tier; the generate event has its own `concurrency_limit`.
   Gradio's file cache is swept hourly (`delete_cache`). Temp PDFs/ZIPs are
   session-scoped: Generate and Clear delete only that session's export, and
-  files abandoned for an hour are swept (`workspace.clear_stale`).
+  files abandoned for an hour are swept (`workspace.clear_stale`). Session
+  state (compressed page previews) expires 1 h after the last Generate, even
+  in an open tab, and frees that session's export.
 * **Priority queue** (`src/queue_manager.py`): binary min-heap, `push`/`pop`
   `O(log n)`, `peek` `Θ(1)`, space `Θ(n)`. Within one request every page has
   the same fragment count, so today it yields document order; it matters once

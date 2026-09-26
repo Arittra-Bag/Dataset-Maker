@@ -171,8 +171,7 @@ def generate(pdf_file, dpi, n_pieces, noise_strength, noise_scale, lossy, seed,
     # Keep disk bounded on the shared server without touching other sessions'
     # in-flight files: drop this session's previous export, then anything
     # abandoned for a full TTL. HF free-tier disk is small.
-    if view is not None:
-        workspace.discard(view.zip_path)
+    release_view(view)
     workspace.clear_stale(config.TEMP_FILE_TTL_S)
 
     progress(0.02, desc="Reading PDF…")
@@ -254,14 +253,20 @@ def show_page(view: RunView | None, page_index):
     return _page_views(view, int(page_index))
 
 
+def release_view(view: RunView | None) -> None:
+    """Free a session's export. Also the State delete_callback, so it runs
+    when an idle or closed session's state expires."""
+    if view is not None:
+        workspace.discard(view.zip_path)
+
+
 def clear_session(view: RunView | None):
     """Delete this session's export and reset every output.
 
     Never calls workspace.clear_all(): the registry is process-wide and would
     unlink other sessions' in-flight files.
     """
-    if view is not None:
-        workspace.discard(view.zip_path)
+    release_view(view)
     return (
         None,                  # pdf_in
         None,                  # state

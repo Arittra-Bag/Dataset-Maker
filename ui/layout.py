@@ -28,7 +28,10 @@ def build_ui() -> gr.Blocks:
         with gr.Accordion("How each guarantee is enforced", open=False):
             gr.HTML(content.GUARANTEES_HTML)
 
-        state = gr.State(None)
+        # Previews of uploaded pages live in session state; expire it (and the
+        # session's export) on the same TTL instead of keeping idle tabs forever.
+        state = gr.State(None, time_to_live=config.TEMP_FILE_TTL_S,
+                         delete_callback=handlers.release_view)
 
         with gr.Row(equal_height=False):
             # ---------------- left: source + configuration ----------------

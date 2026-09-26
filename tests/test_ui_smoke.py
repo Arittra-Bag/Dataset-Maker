@@ -98,6 +98,31 @@ def test_generate_rejects_out_of_range_render_inputs(dpi, strength, scale, messa
                           progress=_noop)
 
 
+def test_session_state_expiry_frees_export():
+    import datetime
+
+    from gradio.state_holder import StateHolder
+
+    from src import config
+
+    demo = build_ui()
+    (state,) = [b for b in demo.blocks.values() if isinstance(b, gr.State)]
+    assert state.time_to_live == config.TEMP_FILE_TTL_S
+    view, *_ = handlers.generate(
+        handlers.load_sample(), 72, 6, 20.0, 60.0, False, 3, progress=_noop,
+    )
+    holder = StateHolder()
+    holder.set_blocks(demo)
+    session = holder["session"]
+    session[state._id] = view
+    holder.delete_all_expired_state()
+    assert os.path.exists(view.zip_path)                  # fresh: kept
+    long_ago = datetime.datetime.now() - datetime.timedelta(seconds=config.TEMP_FILE_TTL_S + 5)
+    session._state_ttl[state._id] = (state.time_to_live, long_ago)
+    holder.delete_all_expired_state()
+    assert not os.path.exists(view.zip_path)              # expired: callback freed it
+
+
 def test_generate_without_pdf_errors():
     with pytest.raises(gr.Error):
         handlers.generate(None, 72, 12, 20.0, 60.0, False, 0, progress=_noop)
