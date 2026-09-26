@@ -77,6 +77,36 @@ def test_preview_roundtrip_and_renders():
         assert img.shape == pv.shape + (3,)
 
 
+def _pixel_pieces(n, side=257):
+    """Page where each of the first n pixels is its own piece (cheap huge count)."""
+    from src.tearing import Piece, TornPage
+
+    pieces = [Piece(label=k, x=k % side, y=k // side, rgb=np.full((1, 1, 3), 255, np.uint8),
+                    mask=np.ones((1, 1), bool)) for k in range(n)]
+    labels = np.arange(side * side, dtype=np.int32).reshape(side, side)
+    labels[labels >= n] = n - 1           # fold the leftover pixels into the last piece
+    pieces[-1] = Piece(label=n - 1, x=0, y=0, rgb=np.full((side, side, 3), 255, np.uint8),
+                       mask=labels == n - 1)
+    return TornPage(width=side, height=side, pieces=pieces, labels=labels, adjacency=[])
+
+
+def test_preview_label_map_holds_uint16_limit():
+    from src.inspection import MAX_PREVIEW_PIECES
+
+    assert MAX_PREVIEW_PIECES == 65536
+    pv = make_preview(_pixel_pieces(MAX_PREVIEW_PIECES))
+    assert pv.labels().max() == MAX_PREVIEW_PIECES - 1
+
+
+def test_preview_rejects_piece_count_beyond_uint16():
+    import pytest
+
+    from src.inspection import MAX_PREVIEW_PIECES
+
+    with pytest.raises(ValueError, match="uint16"):
+        make_preview(_pixel_pieces(MAX_PREVIEW_PIECES + 1))
+
+
 def test_renders_skip_captions_for_many_pieces():
     n_req = MAX_CAPTIONED_PIECES + 20
     torn = tear_page(_page(900, 640), n_req, seed=2, noise_strength=10, noise_scale=40)

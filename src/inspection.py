@@ -31,6 +31,9 @@ from .tearing import TornPage, verify_partition
 # the per-fragment table still lists every index.
 MAX_CAPTIONED_PIECES = 120
 
+# Preview label maps store piece indices as uint16 (indices 0..65535).
+MAX_PREVIEW_PIECES = int(np.iinfo(np.uint16).max) + 1
+
 
 # --------------------------------------------------------------------------
 # Stats
@@ -148,6 +151,12 @@ class PagePreview:
 def make_preview(torn: TornPage, max_side: int = 900) -> PagePreview:
     """Downscale a torn page (nearest for labels, box filter for pixels)."""
     f = max(1, math.ceil(max(torn.height, torn.width) / max_side))
+    # A larger index would wrap silently in the uint16 map below.
+    if len(torn.pieces) > MAX_PREVIEW_PIECES:
+        raise ValueError(
+            f"{len(torn.pieces)} pieces exceed the {MAX_PREVIEW_PIECES} "
+            "a uint16 preview map can index"
+        )
     # Raw labels -> manifest piece index (labels can have gaps when a seed's
     # warped cell vanished).
     lut = np.zeros(int(torn.labels.max()) + 1, dtype=np.uint16)
