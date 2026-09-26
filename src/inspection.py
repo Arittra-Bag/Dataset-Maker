@@ -204,10 +204,11 @@ def _anchors(lab: np.ndarray, n: int) -> np.ndarray:
 
 
 def _font(size: int):
-    try:
-        return ImageFont.load_default(size=size)      # Pillow >= 10.1
-    except TypeError:
-        return ImageFont.load_default()
+    """Bundled default font at `size` px; fixed-size bitmap without FreeType."""
+    base = ImageFont.load_default()
+    if isinstance(base, ImageFont.FreeTypeFont):
+        return base.font_variant(size=size)
+    return base
 
 
 def _caption(draw: ImageDraw.ImageDraw, xy, text: str, font) -> None:

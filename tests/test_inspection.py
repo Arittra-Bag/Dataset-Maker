@@ -93,6 +93,16 @@ def test_fragment_thumbnails():
     assert caption == f"#0 ({r.rows[0]['x']},{r.rows[0]['y']})"
 
 
+def test_font_honours_size_with_freetype():
+    from PIL import ImageFont
+
+    from src.inspection import _font
+
+    font = _font(17)
+    if isinstance(ImageFont.load_default(), ImageFont.FreeTypeFont):
+        assert font.size == 17
+
+
 def test_manifest_excerpt_truncates_but_keeps_order():
     manifest = {
         "generator": "Dataset-Maker",
