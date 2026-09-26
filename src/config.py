@@ -18,6 +18,8 @@ MIN_PIECES, MAX_PIECES = 2, 256
 
 DEFAULT_NOISE_STRENGTH = 28.0   # px of boundary displacement (the "tear" jaggedness)
 DEFAULT_NOISE_SCALE = 96.0      # px wavelength of the noise (bigger = smoother tears)
+MIN_NOISE_STRENGTH, MAX_NOISE_STRENGTH = 0, 80
+MIN_NOISE_SCALE, MAX_NOISE_SCALE = 8, 200
 
 # --- Performance / limits --------------------------------------------------
 MAX_PAGES_PER_PDF = 60      # guardrail for the HF free tier (CPU/RAM bound)
