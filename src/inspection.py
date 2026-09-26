@@ -332,7 +332,15 @@ def format_json(obj) -> str:
     """
     text = json.dumps(obj, indent=2, ensure_ascii=False)
     return _INNERMOST.sub(
-        lambda m: m.group(1) + re.sub(r"\s*\n\s*", " ", m.group(2)).strip()
-        + m.group(3),
-        text,
+        lambda m: m.group(1) + _join_lines(m.group(2)) + m.group(3), text
     )
+
+
+def _join_lines(fragment: str) -> str:
+    r"""Collapse each newline and the whitespace around it into one space.
+
+    Split/strip instead of re.sub(r"\s*\n\s*"): `\s` also matches `\n`, so
+    that pattern backtracks super-linearly on long whitespace runs.
+    """
+    parts = (line.strip() for line in fragment.split("\n"))
+    return " ".join(p for p in parts if p)

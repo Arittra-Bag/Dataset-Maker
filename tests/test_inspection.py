@@ -128,6 +128,14 @@ def test_format_json_roundtrips():
     assert "[0, 1]" in text and '{"f": "p.png", "x": 3}' in text
 
 
+def test_join_lines_collapses_only_newline_whitespace():
+    from src.inspection import _join_lines
+
+    assert _join_lines("\n    0,\n    1\n  ") == "0, 1"
+    assert _join_lines('"a  b",\n\n   "c"') == '"a  b", "c"'
+    assert _join_lines("") == ""
+
+
 def test_zip_listing_groups_pages():
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w") as zf:
