@@ -31,8 +31,8 @@ from src.pipeline import generate_dataset  # noqa: E402
 
 SAMPLE = os.path.join(ROOT, "assets", "sample.pdf")
 FIGURE = os.path.join(ROOT, "assets", "figure_overview.png")
-PARAMS = dict(dpi=100, n_pieces=14, noise_strength=28.0, noise_scale=96.0,
-              master_seed=7, lossy=False)
+PARAMS = {"dpi": 100, "n_pieces": 14, "noise_strength": 28.0, "noise_scale": 96.0,
+          "master_seed": 7, "lossy": False}
 
 PARAGRAPH = (
     "Fragments recovered from the archive box were numbered in the order they "
