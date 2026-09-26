@@ -80,6 +80,24 @@ def test_generate_rejects_out_of_range_piece_count(n_pieces):
                           progress=_noop)
 
 
+@pytest.mark.parametrize(
+    ("dpi", "strength", "scale", "message"),
+    [
+        (3000, 20.0, 60.0, "Render DPI must be between 72 and 300"),
+        (10, 20.0, 60.0, "Render DPI must be between 72 and 300"),
+        (72, -1.0, 60.0, r"Edge displacement \(px\) must be between 0 and 80"),
+        (72, 500.0, 60.0, r"Edge displacement \(px\) must be between 0 and 80"),
+        (72, 20.0, 1.0, r"Edge wavelength \(px\) must be between 8 and 200"),
+        (72, 20.0, float("nan"), r"Edge wavelength \(px\) must be between 8 and 200"),
+        (None, 20.0, 60.0, "Render DPI must be between 72 and 300"),
+    ],
+)
+def test_generate_rejects_out_of_range_render_inputs(dpi, strength, scale, message):
+    with pytest.raises(gr.Error, match=message):
+        handlers.generate(handlers.load_sample(), dpi, 12, strength, scale, False, 0,
+                          progress=_noop)
+
+
 def test_generate_without_pdf_errors():
     with pytest.raises(gr.Error):
         handlers.generate(None, 72, 12, 20.0, 60.0, False, 0, progress=_noop)

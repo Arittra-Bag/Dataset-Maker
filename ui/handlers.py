@@ -7,6 +7,7 @@ Session state (`RunView`) holds compressed previews only, not full-res pages.
 from __future__ import annotations
 
 import html
+import math
 import os
 import re
 import time
@@ -107,6 +108,20 @@ def _pairs_text(pairs: list[tuple[int, int]], per_line: int = 5) -> str:
     return "[\n  " + ",\n  ".join(lines) + "\n]" if lines else "[]"
 
 
+def _require_range(label: str, value, lo: float, hi: float) -> None:
+    """Raise a readable gr.Error unless `value` is a number in [lo, hi].
+
+    Gradio 4.44 does not enforce slider bounds server-side, so API callers
+    can send anything (huge DPI would exhaust memory on the free tier).
+    """
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        v = math.nan                      # NaN fails every comparison below
+    if not lo <= v <= hi:
+        raise gr.Error(f"{label} must be between {lo:g} and {hi:g}.")
+
+
 def _safe_stem(path: str) -> str:
     stem = os.path.splitext(os.path.basename(path))[0]
     return re.sub(r"[^A-Za-z0-9_.-]+", "-", stem)[:40] or "document"
@@ -145,12 +160,13 @@ def generate(pdf_file, dpi, n_pieces, noise_strength, noise_scale, lossy, seed,
     """Run the pipeline. Returns (state, source, partition, gallery, zip)."""
     if pdf_file is None:
         raise gr.Error("Upload a PDF first (or click 'Load sample PDF').")
-    # Gradio 4.44 does not enforce slider bounds server-side, so API callers
-    # can send any count; reject before spending minutes tearing.
-    if not config.MIN_PIECES <= int(n_pieces) <= config.MAX_PIECES:
-        raise gr.Error(
-            f"Fragments per page must be between {config.MIN_PIECES} and {config.MAX_PIECES}."
-        )
+    # Reject out-of-range API input before spending minutes rendering/tearing.
+    _require_range("Fragments per page", n_pieces, config.MIN_PIECES, config.MAX_PIECES)
+    _require_range("Render DPI", dpi, config.MIN_DPI, config.MAX_DPI)
+    _require_range("Edge displacement (px)", noise_strength,
+                   config.MIN_NOISE_STRENGTH, config.MAX_NOISE_STRENGTH)
+    _require_range("Edge wavelength (px)", noise_scale,
+                   config.MIN_NOISE_SCALE, config.MAX_NOISE_SCALE)
 
     # Keep disk bounded on the shared server without touching other sessions'
     # in-flight files: drop this session's previous export, then anything
