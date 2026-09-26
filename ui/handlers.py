@@ -108,18 +108,22 @@ def _pairs_text(pairs: list[tuple[int, int]], per_line: int = 5) -> str:
     return "[\n  " + ",\n  ".join(lines) + "\n]" if lines else "[]"
 
 
-def _require_range(label: str, value, lo: float, hi: float) -> None:
-    """Raise a readable gr.Error unless `value` is a number in [lo, hi].
+def _require_range(label: str, value, lo: float, hi: float, integer: bool = False):
+    """Return `value` as a number in [lo, hi] (an int when `integer`), else
+    raise a readable gr.Error. Callers must use the returned value.
 
     Gradio 4.44 does not enforce slider bounds server-side, so API callers
     can send anything (huge DPI would exhaust memory on the free tier).
     """
     try:
         v = float(value)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         v = math.nan                      # NaN fails every comparison below
     if not lo <= v <= hi:
         raise gr.Error(f"{label} must be between {lo:g} and {hi:g}.")
+    if integer and not v.is_integer():
+        raise gr.Error(f"{label} must be a whole number.")
+    return int(v) if integer else v
 
 
 def _safe_stem(path: str) -> str:
@@ -160,13 +164,15 @@ def generate(pdf_file, dpi, n_pieces, noise_strength, noise_scale, lossy, seed,
     """Run the pipeline. Returns (state, source, partition, gallery, zip)."""
     if pdf_file is None:
         raise gr.Error("Upload a PDF first (or click 'Load sample PDF').")
-    # Reject out-of-range API input before spending minutes rendering/tearing.
-    _require_range("Fragments per page", n_pieces, config.MIN_PIECES, config.MAX_PIECES)
-    _require_range("Render DPI", dpi, config.MIN_DPI, config.MAX_DPI)
-    _require_range("Edge displacement (px)", noise_strength,
-                   config.MIN_NOISE_STRENGTH, config.MAX_NOISE_STRENGTH)
-    _require_range("Edge wavelength (px)", noise_scale,
-                   config.MIN_NOISE_SCALE, config.MAX_NOISE_SCALE)
+    # Validate and normalize API input before any cleanup or rendering; only
+    # the validated values are used below.
+    n_pieces = _require_range("Fragments per page", n_pieces,
+                              config.MIN_PIECES, config.MAX_PIECES, integer=True)
+    dpi = _require_range("Render DPI", dpi, config.MIN_DPI, config.MAX_DPI, integer=True)
+    noise_strength = _require_range("Edge displacement (px)", noise_strength,
+                                    config.MIN_NOISE_STRENGTH, config.MAX_NOISE_STRENGTH)
+    noise_scale = _require_range("Edge wavelength (px)", noise_scale,
+                                 config.MIN_NOISE_SCALE, config.MAX_NOISE_SCALE)
 
     # Keep disk bounded on the shared server without touching other sessions'
     # in-flight files: drop this session's previous export, then anything
