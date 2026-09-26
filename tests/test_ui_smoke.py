@@ -26,25 +26,31 @@ def test_generate_then_inspect_pages():
     view, source, partition, thumbs, zip_path = handlers.generate(
         handlers.load_sample(), 72, 12, 20.0, 60.0, False, 5, progress=_noop,
     )
-    assert os.path.isfile(zip_path) and zip_path.endswith("_dataset.zip")
-    assert source.shape == partition.shape and source.dtype == np.uint8
+    assert os.path.isfile(zip_path)
+    assert zip_path.endswith("_dataset.zip")
+    assert source.shape == partition.shape
+    assert source.dtype == np.uint8
     assert 0 < len(thumbs) <= handlers.MAX_THUMBNAILS
     assert len(view.reports) == len(view.previews) >= 2
     assert all(r.is_partition for r in view.reports)
 
     summary, dd, adj, rows, meta, pairs, manifest_json, zip_rows = handlers.after_generate(view)
-    assert "partition verified" in summary and f"{len(view.reports)}/{len(view.reports)}" in summary
-    assert dd["choices"][0][1] == 0 and dd["value"] == 0
+    assert "partition verified" in summary
+    assert f"{len(view.reports)}/{len(view.reports)}" in summary
+    assert dd["choices"][0][1] == 0
+    assert dd["value"] == 0
     assert len(rows) == view.reports[0].n_pieces
     assert '"schema_version": "1.1"' in manifest_json
     assert {r[0] for r in zip_rows} >= {"manifest.json", "README.txt"}
 
     page2 = handlers.show_page(view, 1)
     expected_rows = [[row[h] for h in handlers.GT_HEADERS] for row in view.reports[1].rows]
-    assert len(page2) == 7 and page2[4] == expected_rows
+    assert len(page2) == 7
+    assert page2[4] == expected_rows
 
     cleared = handlers.clear_all()
-    assert cleared[0] is None and cleared[1] is None
+    assert cleared[0] is None
+    assert cleared[1] is None
     assert not os.path.exists(zip_path)
 
 

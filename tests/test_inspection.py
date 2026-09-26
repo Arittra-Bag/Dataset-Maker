@@ -34,7 +34,9 @@ def test_reassemble_is_pixel_exact():
 def test_page_report_consistency():
     torn = tear_page(_page(), 16, seed=3, noise_strength=25, noise_scale=80)
     r = page_report(torn, index=2, n_requested=16)
-    assert r.is_partition and r.max_overlap == 1 and r.uncovered_pixels == 0
+    assert r.is_partition
+    assert r.max_overlap == 1
+    assert r.uncovered_pixels == 0
     assert r.n_pieces == len(torn.pieces) == len(r.rows)
     assert sum(row["degree"] for row in r.rows) == 2 * r.n_edges
     assert sum(row["area_px"] for row in r.rows) == torn.width * torn.height
@@ -71,7 +73,8 @@ def test_preview_roundtrip_and_renders():
 
     n = len(torn.pieces)
     for img in (render_partition(pv, n), render_adjacency(pv, n, torn.adjacency)):
-        assert img.dtype == np.uint8 and img.shape == pv.shape + (3,)
+        assert img.dtype == np.uint8
+        assert img.shape == pv.shape + (3,)
 
 
 def test_renders_skip_captions_for_many_pieces():
@@ -89,7 +92,8 @@ def test_fragment_thumbnails():
     thumbs = fragment_thumbnails(make_preview(torn, 200), r.rows, limit=5)
     assert len(thumbs) == min(5, r.n_pieces)
     img, caption = thumbs[0]
-    assert img.ndim == 3 and img.shape[2] == 3
+    assert img.ndim == 3
+    assert img.shape[2] == 3
     assert caption == f"#0 ({r.rows[0]['x']},{r.rows[0]['y']})"
 
 
@@ -115,8 +119,10 @@ def test_manifest_excerpt_truncates_but_keeps_order():
     ex = manifest_excerpt(manifest, max_pieces=3, max_pairs=4)
     assert list(ex) == ["generator", "pages", "total_pieces"]
     first = ex["pages"][0]
-    assert first["adjacency"][:4] == [[0, 1]] * 4 and first["adjacency"][4] == "... 16 more"
-    assert len(first["pieces"]) == 4 and first["pieces"][-1] == "... 7 more"
+    assert first["adjacency"][:4] == [[0, 1]] * 4
+    assert first["adjacency"][4] == "... 16 more"
+    assert len(first["pieces"]) == 4
+    assert first["pieces"][-1] == "... 7 more"
     assert ex["pages"][1] == "... 1 more page(s)"
     assert len(manifest["pages"][0]["pieces"]) == 10      # input untouched
 
@@ -125,7 +131,8 @@ def test_format_json_roundtrips():
     obj = {"a": [[0, 1], [2, 3]], "b": {"x": 1, "y": [1, 2]}, "c": [{"f": "p.png", "x": 3}], "d": []}
     text = format_json(obj)
     assert json.loads(text) == obj
-    assert "[0, 1]" in text and '{"f": "p.png", "x": 3}' in text
+    assert "[0, 1]" in text
+    assert '{"f": "p.png", "x": 3}' in text
 
 
 def test_join_lines_collapses_only_newline_whitespace():
