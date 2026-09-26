@@ -80,6 +80,70 @@ def test_generate_rejects_out_of_range_piece_count(n_pieces):
                           progress=_noop)
 
 
+@pytest.mark.parametrize(
+    ("dpi", "strength", "scale", "message"),
+    [
+        (3000, 20.0, 60.0, "Render DPI must be between 72 and 300"),
+        (10, 20.0, 60.0, "Render DPI must be between 72 and 300"),
+        (72, -1.0, 60.0, r"Edge displacement \(px\) must be between 0 and 80"),
+        (72, 500.0, 60.0, r"Edge displacement \(px\) must be between 0 and 80"),
+        (72, 20.0, 1.0, r"Edge wavelength \(px\) must be between 8 and 200"),
+        (72, 20.0, float("nan"), r"Edge wavelength \(px\) must be between 8 and 200"),
+        (None, 20.0, 60.0, "Render DPI must be between 72 and 300"),
+    ],
+)
+def test_generate_rejects_out_of_range_render_inputs(dpi, strength, scale, message):
+    with pytest.raises(gr.Error, match=message):
+        handlers.generate(handlers.load_sample(), dpi, 12, strength, scale, False, 0,
+                          progress=_noop)
+
+
+def test_session_state_expiry_frees_export():
+    import datetime
+
+    from gradio.state_holder import StateHolder
+
+    from src import config
+
+    demo = build_ui()
+    (state,) = [b for b in demo.blocks.values() if isinstance(b, gr.State)]
+    assert state.time_to_live == config.TEMP_FILE_TTL_S
+    view, *_ = handlers.generate(
+        handlers.load_sample(), 72, 6, 20.0, 60.0, False, 3, progress=_noop,
+    )
+    holder = StateHolder()
+    holder.set_blocks(demo)
+    session = holder["session"]
+    session[state._id] = view
+    holder.delete_all_expired_state()
+    assert os.path.exists(view.zip_path)                  # fresh: kept
+    long_ago = datetime.datetime.now() - datetime.timedelta(seconds=config.TEMP_FILE_TTL_S + 5)
+    session._state_ttl[state._id] = (state.time_to_live, long_ago)
+    holder.delete_all_expired_state()
+    assert not os.path.exists(view.zip_path)              # expired: callback freed it
+
+
+@pytest.mark.parametrize(("n_pieces", "dpi"), [("12.5", 72), (12.5, 72), (12, "150.5")])
+def test_non_integral_counts_rejected_before_cleanup(n_pieces, dpi):
+    view, *_ = handlers.generate(
+        handlers.load_sample(), 72, 6, 20.0, 60.0, False, 1, progress=_noop,
+    )
+    with pytest.raises(gr.Error, match="must be a whole number"):
+        handlers.generate(handlers.load_sample(), dpi, n_pieces, 20.0, 60.0, False, 1,
+                          view, progress=_noop)
+    assert os.path.exists(view.zip_path)                  # previous export untouched
+    handlers.release_view(view)
+
+
+def test_require_range_returns_normalized_values():
+    assert handlers._require_range("x", "12", 2, 256, integer=True) == 12
+    assert handlers._require_range("x", 12.0, 2, 256, integer=True) == 12
+    assert isinstance(handlers._require_range("x", "12", 2, 256, integer=True), int)
+    assert handlers._require_range("x", "28.5", 0, 80) == 28.5
+    with pytest.raises(gr.Error, match="between 2 and 256"):
+        handlers._require_range("x", 10**400, 2, 256, integer=True)   # float() overflows
+
+
 def test_generate_without_pdf_errors():
     with pytest.raises(gr.Error):
         handlers.generate(None, 72, 12, 20.0, 60.0, False, 0, progress=_noop)

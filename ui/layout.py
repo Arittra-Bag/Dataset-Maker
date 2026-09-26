@@ -28,7 +28,10 @@ def build_ui() -> gr.Blocks:
         with gr.Accordion("How each guarantee is enforced", open=False):
             gr.HTML(content.GUARANTEES_HTML)
 
-        state = gr.State(None)
+        # Previews of uploaded pages live in session state; expire it (and the
+        # session's export) on the same TTL instead of keeping idle tabs forever.
+        state = gr.State(None, time_to_live=config.TEMP_FILE_TTL_S,
+                         delete_callback=handlers.release_view)
 
         with gr.Row(equal_height=False):
             # ---------------- left: source + configuration ----------------
@@ -49,12 +52,14 @@ def build_ui() -> gr.Blocks:
                 )
                 with gr.Accordion("Tear geometry", open=True):
                     noise_strength = gr.Slider(
-                        0, 80, config.DEFAULT_NOISE_STRENGTH, step=1,
+                        config.MIN_NOISE_STRENGTH, config.MAX_NOISE_STRENGTH,
+                        config.DEFAULT_NOISE_STRENGTH, step=1,
                         label="Edge displacement (px) · noise_strength",
                         info="Domain-warp amplitude. 0 = straight Voronoi edges.",
                     )
                     noise_scale = gr.Slider(
-                        8, 200, config.DEFAULT_NOISE_SCALE, step=1,
+                        config.MIN_NOISE_SCALE, config.MAX_NOISE_SCALE,
+                        config.DEFAULT_NOISE_SCALE, step=1,
                         label="Edge wavelength (px) · noise_scale",
                         info="Base wavelength of the warp noise. Displacement far above "
                              "wavelength folds the warp → multi-component fragments (reported).",
