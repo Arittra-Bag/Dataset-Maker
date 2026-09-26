@@ -71,3 +71,20 @@ def test_adjacency_invariants_on_real_page():
         seen.add(u)
         stack.extend(nbrs[u] - seen)
     assert len(seen) == n          # every piece reachable
+
+
+def test_partition_golden_hash():
+    # Pins the exact partition for fixed inputs under the pinned numpy/scipy.
+    # If this fails after a dependency bump or a change to noise/sampling/
+    # tearing, previously published datasets can no longer be regenerated
+    # bit-for-bit: bump MANIFEST_SCHEMA_VERSION / generator version and update
+    # the hash deliberately, never silently.
+    import hashlib
+
+    img = np.zeros((240, 170, 3), np.uint8)
+    torn = tear_page(img, 9, seed=7, noise_strength=18, noise_scale=40)
+    digest = hashlib.sha256(torn.labels.astype("<i4").tobytes()).hexdigest()
+    assert digest == (
+        "b608c92d28943ae462fabd7c5a331ae56319cafa40984582654846e57e51dd9c"
+    )
+    assert torn.seed == 7
