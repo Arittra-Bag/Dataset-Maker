@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 from scipy.ndimage import binary_dilation
-from scipy.spatial import ConvexHull
+from scipy.spatial import ConvexHull, QhullError
 
 from . import canon
 
@@ -102,7 +102,7 @@ def hull_points(alpha: np.ndarray) -> np.ndarray:
         return pts
     try:
         return pts[ConvexHull(pts).vertices]
-    except Exception:                   # degenerate (collinear) masks
+    except QhullError:                  # degenerate (collinear) masks
         return pts[[0, -1]]
 
 
@@ -250,7 +250,8 @@ def score_page(page: PageInputs, solution: dict | None) -> PageScore:
         score.curve_neighbor = [0.0] * len(TAU_CURVE)
         return score
     pred, invalid = {}, 0
-    for fid, entry in (solution.get("fragments") or {}).items():
+    entries = solution.get("fragments")
+    for fid, entry in (entries if isinstance(entries, dict) else {}).items():
         if fid in page.gt and isinstance(entry, dict) and is_rigid(entry.get("affine")):
             pred[fid] = to3(entry["affine"])
         else:

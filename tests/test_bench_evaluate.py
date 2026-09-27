@@ -147,3 +147,11 @@ def test_geometry_helpers():
     assert not E.is_rigid([[1, 0, 0], [0, -1, 0]])                          # mirror
     assert not E.is_rigid([[float("nan"), 0, 0], [0, 1, 0]])
     assert not E.is_rigid("x")
+
+
+@pytest.mark.parametrize("bad", ["abc", ["f000"], 7, None])
+def test_malformed_fragments_field_scores_zero(pages, bad):
+    page, _, _ = pages[0]
+    s = E.score_page(page, {"fragments": bad})
+    assert s.placed == 0
+    assert s.direct_acc == 0.0
