@@ -70,6 +70,18 @@ secret-seeded held-out test split, an evaluation harness (direct and neighbour
 accuracy, perfect pages, adjacency F1, Hit@k, bootstrap CIs) and a
 deterministic baseline, `edge-greedy`. Full card: [docs/BENCHMARK.md](docs/BENCHMARK.md).
 
+The canonical 0.1.0 release, including the held-out test puzzles, is on
+Hugging Face: [arittrabag/dm-bench](https://huggingface.co/datasets/arittrabag/dm-bench)
+(release_sha256 `6fe00ba8...b185ed`). A local build reproduces val and test-dev
+exactly; the test split needs the maintainer secret.
+
+```bash
+hf download arittrabag/dm-bench --repo-type dataset --local-dir dm-bench-v0.1
+python -m src.bench verify dm-bench-v0.1
+```
+
+Or build the public splits yourself:
+
 ```bash
 python -m src.bench build --out dm-bench-v0.1 --workers 8
 python -m src.bench solve --release dm-bench-v0.1 --out solutions --workers 8
