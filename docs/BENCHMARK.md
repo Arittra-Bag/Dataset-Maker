@@ -84,6 +84,8 @@ Canonical 0.1.0 commitment (release_sha256 `6fe00ba8...b185ed`):
 
 ## Release layout
 
+Canonical 0.1.0 release: [huggingface.co/datasets/arittrabag/dm-bench](https://huggingface.co/datasets/arittrabag/dm-bench).
+
 ```
 benchmark.json                       spec, per-split counts and stats, build env; no timestamps
 SHA256SUMS                           byte hashes (download integrity; sha256sum -c compatible)
