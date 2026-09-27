@@ -76,7 +76,10 @@ python -m src.bench solve --release dm-bench-v0.1 --out solutions --workers 8
 python -m src.bench eval  --release dm-bench-v0.1 --solutions solutions
 ```
 
-Baseline on test-dev (measured; val was used for tuning, see the card):
+Baseline on test-dev (measured; val was used for tuning, see the card).
+Source: `eval` results file for `edge-greedy@0.1`, eval_version 1.0,
+release_sha256 `877b489cfd8e8ad84a2d8d55961a993f4bad4a5f1aa1e5483d412a6142fdbbc0`
+(public splits of dm-bench 0.1.0):
 
 | tier | direct_acc [95% CI] | neighbor_acc | perfect pages |
 |------|---------------------|--------------|---------------|
@@ -84,8 +87,8 @@ Baseline on test-dev (measured; val was used for tuning, see the card):
 | medium | 0.673 [0.555, 0.765] | 0.687 | 0.125 |
 | hard | 0.221 [0.203, 0.243] | 0.626 | 0.000 |
 
-Random placement scores 0 on every metric. No held-out test scores are
-claimed yet.
+Random placement (`--method random`, same release and eval_version) scores 0
+on every metric. No held-out test scores are claimed yet.
 
 ## Run locally
 
