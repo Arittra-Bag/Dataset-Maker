@@ -72,7 +72,8 @@ deterministic baseline, `edge-greedy`. Full card: [docs/BENCHMARK.md](docs/BENCH
 
 The canonical 0.1.0 release, including the held-out test puzzles, is on
 Hugging Face: [arittrabag/dm-bench](https://huggingface.co/datasets/arittrabag/dm-bench)
-(release_sha256 `6fe00ba8...b185ed`). A local build reproduces val and test-dev
+(release_sha256 `6fe00ba8...b185ed`, DOI
+[10.57967/hf/10638](https://doi.org/10.57967/hf/10638)). A local build reproduces val and test-dev
 exactly; the test split needs the maintainer secret.
 
 ```bash
@@ -272,6 +273,21 @@ break it, so these are pinned in `requirements.txt`:
 | `fastapi==0.112.4` / `starlette==0.38.6` | starlette ≥0.29 reordered `TemplateResponse` args → gradio passes a dict as template name → `TypeError: unhashable type: 'dict'` on every page load |
 | `huggingface_hub==0.25.2` | hub ≥1.0 removed `HfFolder` that gradio 4.44 imports |
 | `pydantic==2.10.6` | pydantic ≥2.11 emits bool `additionalProperties` → gradio_client 1.3.0 `get_api_info()` crashes |
+
+## Citation
+
+If you use dm-bench, cite the dataset:
+
+```bibtex
+@misc{bag2026dmbench,
+  author    = {Bag, Arittra},
+  title     = {dm-bench},
+  year      = {2026},
+  publisher = {Hugging Face},
+  doi       = {10.57967/hf/10638},
+  url       = {https://huggingface.co/datasets/arittrabag/dm-bench}
+}
+```
 
 ## License
 
