@@ -1,7 +1,7 @@
 """Determinism primitives: seed streams, exact trig, canonical JSON, digests."""
 import io
 import math
-from decimal import Decimal, getcontext
+from decimal import Decimal, getcontext, localcontext
 
 import numpy as np
 import pytest
@@ -36,23 +36,26 @@ def test_opaque_id_is_stable_hex():
 
 
 def test_trig_is_correctly_rounded():
-    getcontext().prec = 80
     pi = Decimal("3.14159265358979323846264338327950288419716939937510582097494459")
     rng = np.random.default_rng(0)
+    prec_before = getcontext().prec
+    canon._TRIG_CACHE.clear()                     # force the series path
     for mdeg in [1, 45000, 123456, 359999, *rng.integers(0, 360000, 200).tolist()]:
         c, s = canon.cos_sin_mdeg(mdeg)
-        x = Decimal(mdeg) * pi / Decimal(180000)
-        # 80-digit reference via series
-        rc = rs = Decimal(0)
-        tc, ts = Decimal(1), x
-        for k in range(80):
-            rc += tc
-            rs += ts
-            tc *= -x * x / ((2 * k + 1) * (2 * k + 2))
-            ts *= -x * x / ((2 * k + 2) * (2 * k + 3))
+        with localcontext() as ctx:               # independent 80-digit reference
+            ctx.prec = 80
+            x = Decimal(mdeg) * pi / Decimal(180000)
+            rc = rs = Decimal(0)
+            tc, ts = Decimal(1), x
+            for k in range(80):
+                rc += tc
+                rs += ts
+                tc *= -x * x / ((2 * k + 1) * (2 * k + 2))
+                ts *= -x * x / ((2 * k + 2) * (2 * k + 3))
         assert c == float(rc) + 0.0
         assert s == float(rs) + 0.0
         assert abs(c - math.cos(float(x))) <= 2 * math.ulp(1.0)
+    assert getcontext().prec == prec_before       # caller's context untouched
 
 
 def test_trig_exact_at_right_angles():

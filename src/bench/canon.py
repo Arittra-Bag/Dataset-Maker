@@ -10,7 +10,7 @@ from __future__ import annotations
 import hashlib
 import io
 import json
-from decimal import Decimal, getcontext
+from decimal import Decimal, localcontext
 
 import numpy as np
 
@@ -85,15 +85,16 @@ def cos_sin_mdeg(mdeg: int) -> tuple[float, float]:
         return _TRIG_CACHE[mdeg]
     if mdeg % 90000 == 0:                       # exact at right angles
         return ((1.0, 0.0), (0.0, 1.0), (-1.0, 0.0), (0.0, -1.0))[mdeg // 90000]
-    getcontext().prec = 40
-    x = Decimal(mdeg) * _decimal_pi() / Decimal(180000)
-    c = s = Decimal(0)
-    term_c, term_s = Decimal(1), x
-    for k in range(60):
-        c += term_c
-        s += term_s
-        term_c *= -x * x / ((2 * k + 1) * (2 * k + 2))
-        term_s *= -x * x / ((2 * k + 2) * (2 * k + 3))
+    with localcontext() as ctx:                 # never touch the thread's context
+        ctx.prec = 40
+        x = Decimal(mdeg) * _decimal_pi() / Decimal(180000)
+        c = s = Decimal(0)
+        term_c, term_s = Decimal(1), x
+        for k in range(60):
+            c += term_c
+            s += term_s
+            term_c *= -x * x / ((2 * k + 1) * (2 * k + 2))
+            term_s *= -x * x / ((2 * k + 2) * (2 * k + 3))
     out = (float(c) + 0.0, float(s) + 0.0)      # + 0.0 normalises -0.0
     _TRIG_CACHE[mdeg] = out
     return out
