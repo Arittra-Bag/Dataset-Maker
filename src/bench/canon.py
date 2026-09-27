@@ -115,6 +115,8 @@ def _canon(obj):
         return _canon(float(obj))
     if isinstance(obj, (np.integer,)):
         return int(obj)
+    if isinstance(obj, np.bool_):
+        return bool(obj)
     if isinstance(obj, dict):
         if not all(isinstance(k, str) for k in obj):
             raise TypeError("canonical JSON keys must be str")
@@ -134,9 +136,16 @@ def _reject_constant(name):
     raise ValueError(f"non-finite JSON constant {name}")
 
 
+def _finite_float(token: str) -> float:
+    value = float(token)
+    if value in (float("inf"), float("-inf")):
+        raise ValueError(f"non-finite JSON number {token}")      # e.g. 1e400 overflow
+    return value
+
+
 def loads(text: str):
-    """Strict JSON: NaN/Infinity tokens are rejected."""
-    return json.loads(text, parse_constant=_reject_constant)
+    """Strict JSON: NaN/Infinity tokens and overflowing numbers are rejected."""
+    return json.loads(text, parse_constant=_reject_constant, parse_float=_finite_float)
 
 
 # ---------------------------------------------------------------------------

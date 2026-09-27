@@ -94,3 +94,9 @@ def test_png_content_digest_ignores_encoder_and_hidden_rgb():
 
 def test_json_content_digest_ignores_formatting():
     assert canon.content_digest_json(b'{"a": 1, "b": 2}') == canon.content_digest_json(b'{"b":2,"a":1}')
+
+
+def test_numpy_bool_and_overflow():
+    assert canon.dumps({"ok": np.bool_(True)}) == '{"ok":true}\n'
+    with pytest.raises(ValueError):
+        canon.loads('{"x": 1e400}')
