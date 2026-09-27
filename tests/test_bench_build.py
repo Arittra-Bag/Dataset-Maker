@@ -103,3 +103,17 @@ def test_checksums_detect_tampering(release, tmp_path):
     with open(os.path.join(copy, *victim.split("/")), "ab") as fh:
         fh.write(b"\0")
     assert build.verify_checksums(copy) == [victim]
+
+
+def test_bad_secret_is_never_echoed():
+    bad = "00112233445566778899aabbccddeeXZ-real-secret-typo"
+    with pytest.raises(ValueError) as err:
+        build.secret_entropy(bad)
+    assert bad not in str(err.value)
+    assert err.value.__context__ is None or err.value.__suppress_context__
+
+
+def test_refuses_non_empty_output_dir(tmp_path):
+    (tmp_path / "stale.txt").write_text("left over")
+    with pytest.raises(ValueError, match="not empty"):
+        build.write_release(str(tmp_path), ["easy"], DOCS, ["val"])

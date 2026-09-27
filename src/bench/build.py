@@ -75,7 +75,11 @@ def doc_range(split: str, docs: dict[str, int]) -> range:
 
 
 def secret_entropy(secret_hex: str) -> int:
-    value = int(secret_hex, 16)
+    try:
+        value = int(secret_hex, 16)
+    except (TypeError, ValueError):
+        # `from None`: the original error message contains the secret verbatim.
+        raise ValueError(f"{SECRET_ENV} is not a valid hex string") from None
     if value.bit_length() < 100:
         raise ValueError(f"{SECRET_ENV} must be a >=128-bit hex string")
     return value
@@ -301,6 +305,10 @@ def write_release(out: str, tiers: list[str], docs: dict[str, int],
     """
     if "test" in splits and not secret_hex:
         raise ValueError(f"building the test split requires {SECRET_ENV}")
+    if os.path.isdir(out) and os.listdir(out):
+        # Leftover pages would be hashed into SHA256SUMS but not counted in
+        # benchmark.json, so the release would disagree with itself.
+        raise ValueError(f"output directory {out!r} is not empty")
     jobs = list(_jobs(tiers, splits, docs, secret_hex, limit_docs))
     counts: dict = {}
     test_answers: list[str] = []
