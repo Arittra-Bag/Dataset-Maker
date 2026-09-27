@@ -96,6 +96,11 @@
 .tab-nav button { font-size: 13px; }
 #dm-generate { font-weight: 600; }
 
+/* Gradio lets the main content box grow to fill the window, which parks the
+   footer at the bottom and leaves a blank band under short tabs (manifest,
+   Export) on tall screens. It is an inline style, hence !important. */
+.gradio-container .wrap > .contain { flex-grow: 0 !important; }
+
 /* ---- narrow screens ------------------------------------------------------ */
 /* Gradio sets an inline min-width on blocks, so the summary needs !important to
    wrap below the page dropdown instead of shrinking to a sliver. */
