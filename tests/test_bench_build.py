@@ -1,4 +1,5 @@
 """Benchmark builder: pure-function pages, held-out test, no leaks, integrity."""
+import hashlib
 import json
 import os
 
@@ -6,7 +7,9 @@ import pytest
 
 from src.bench import build, canon
 
-SECRET = "00112233445566778899aabbccddeeff"      # throwaway, tests only
+# Throwaway, tests only. Derived rather than written out so no secret-shaped
+# literal ever sits in the repo.
+SECRET = hashlib.sha256(b"dm-bench unit-test fixture").hexdigest()[:32]
 DOCS = {"train": 2, "val": 1, "test-dev": 1, "test": 1}
 
 
@@ -106,7 +109,7 @@ def test_checksums_detect_tampering(release, tmp_path):
 
 
 def test_bad_secret_is_never_echoed():
-    bad = "00112233445566778899aabbccddeeXZ-real-secret-typo"
+    bad = SECRET[:-2] + "XZ-typo"
     with pytest.raises(ValueError) as err:
         build.secret_entropy(bad)
     assert bad not in str(err.value)
