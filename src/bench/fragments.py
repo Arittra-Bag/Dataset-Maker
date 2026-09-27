@@ -5,8 +5,8 @@ Normative per-fragment order (see docs/BENCHMARK.md, leakage review):
        before tearing, so noise/JPEG never correlate across seams)
     2. erosion (paper loss) on torn borders only; lost RGB is zeroed
     3. rotation by an integer millidegree angle with an exact affine
-    4. tight crop to alpha + random 0..PAD_MAX px margin per side, so canvas
-       size carries no information about the angle
+    4. tight crop to alpha + random 0..PAD_MAX px margin per side, so the
+       canvas adds no information beyond the fragment's own mask
     5. blur, integer noise, JPEG, all in the fragment's own frame
     6. RGB zeroed wherever alpha == 0; alpha is exactly {0, 255}
 
@@ -70,6 +70,8 @@ def _erode(mask: np.ndarray, x0: int, y0: int, page_w: int, page_h: int,
         padded[:, -1] = True
     if y0 + h == page_h:
         padded[-1, :] = True
+    if padded.all():                  # no torn border anywhere: nothing to erode
+        return mask                   # (cdt would return -1 with no background)
     dist = distance_transform_cdt(padded, metric="chessboard")[1:-1, 1:-1]
     kept = mask & (dist > width)
     lab, n = cc_label(kept)

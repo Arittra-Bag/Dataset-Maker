@@ -89,3 +89,10 @@ def test_same_rngs_same_fragment():
     b = make_fragment(page, torn.pieces[0], HARD, _rngs(9))
     assert np.array_equal(a.rgba, b.rgba)
     assert a.affine == b.affine
+
+
+def test_erosion_leaves_a_whole_page_piece_intact():
+    from src.bench.fragments import _erode
+
+    mask = np.ones((30, 20), bool)                   # one piece covering the page
+    assert np.array_equal(_erode(mask, 0, 0, 20, 30, 2), mask)
