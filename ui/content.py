@@ -48,7 +48,7 @@ HEADER_HTML = f"""
 """
 
 GUARANTEES_HTML = f"""
-<table class="dm-table dm-guarantees">
+<div class="dm-scroll"><table class="dm-table dm-guarantees">
   <thead><tr><th>Guarantee</th><th>What it means</th><th>Enforced by</th></tr></thead>
   <tbody>
     <tr><td>Strict partition</td>
@@ -75,7 +75,7 @@ GUARANTEES_HTML = f"""
             input SHA-256 and library versions.</td>
         <td><code>tests/test_pipeline.py</code></td></tr>
   </tbody>
-</table>
+</table></div>
 """
 
 EMPTY_SUMMARY_HTML = (
@@ -85,7 +85,7 @@ EMPTY_SUMMARY_HTML = (
 )
 
 MANIFEST_FIELDS_HTML = """
-<table class="dm-table">
+<div class="dm-scroll"><table class="dm-table">
   <thead><tr><th>Field</th><th>Meaning</th></tr></thead>
   <tbody>
     <tr><td><code>pages[].pieces[].x, y</code></td>
@@ -109,7 +109,7 @@ MANIFEST_FIELDS_HTML = """
     <tr><td><code>schema_version</code></td>
         <td>1.1 adds provenance fields; all 1.0 fields are unchanged.</td></tr>
   </tbody>
-</table>
+</table></div>
 """
 
 EXPORT_LAYOUT_HTML = """

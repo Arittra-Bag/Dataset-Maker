@@ -95,4 +95,12 @@
 #dm-gt-table table { font-family: var(--font-mono); font-size: 12px; }
 .tab-nav button { font-size: 13px; }
 #dm-generate { font-weight: 600; }
-#dm-summary { flex-grow: 1; min-width: 320px; }
+
+/* ---- narrow screens ------------------------------------------------------ */
+/* Gradio sets an inline min-width on blocks, so the summary needs !important to
+   wrap below the page dropdown instead of shrinking to a sliver. */
+#dm-summary { flex: 1 1 320px; min-width: min(320px, 100%) !important; }
+
+/* Tables keep their desktop layout and scroll sideways when the column is
+   too narrow (phones, tablets), instead of spilling past their card. */
+.dm-scroll { overflow-x: auto; max-width: 100%; }
