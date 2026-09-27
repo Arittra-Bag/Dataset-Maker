@@ -161,7 +161,7 @@ per tier) as roughly 90% intervals.
 | method | what it is |
 |--------|-----------|
 | `oracle` | reads the answers; harness self-check only (must score 1.0), refused on test |
-| `random` | uniform random rigid poses; the floor (0 by construction) |
+| `random@0.1` | uniform random rigid poses; the floor (not 0 by construction: two fragments can line up by chance) |
 | `edge-greedy@0.1` | the baseline (`src/bench/solver.py`) |
 
 edge-greedy: Moore-traced contours cut into ~96 px windows; complementary
@@ -199,13 +199,17 @@ pinned golden digests). Source:
   has the most documents.
 - test-dev is small (10 documents per tier) and noisy: on medium it scores
   0.673 while val and test score 0.824 and 0.865. Test is within val's
-  interval on every tier (hard 0.246 vs 0.255), so that dip is sampling
-  variation, not tuning overfit. Its intervals cover roughly 90% (see the bootstrap note above).
+  interval on every tier (hard 0.246 vs 0.255), so that dip is consistent
+  with sampling variation; overlap alone cannot rule out some tuning effect.
+  Its intervals cover roughly 90% (see the bootstrap note above).
 - The val and test-dev rows are identical to an earlier independent build of
   the public splits, as the determinism guarantee requires.
-- `random` scores 0.000 on every metric of val and test-dev on this release
-  ([results file](results/dm-bench-0.1.0_random_val-testdev_eval-1.0.json));
-  it was not run on test.
+- `random@0.1` scores 0.000 on every headline metric (direct, neighbor,
+  perfect, adjacency) of val and test-dev on this release
+  ([results file](results/dm-bench-0.1.0_random_val-testdev_eval-1.0.json)).
+  Only the loosest tau-curve point is nonzero: medium val direct 0.0042 and
+  neighbor 0.0011 at tau = 2% (curve AUC 0.001 and 0.0003). It was not run
+  on test.
 - Reading the table: easy is close to solved; hard is not. On hard, pairwise
   matching is still good (Hit@1 above 0.9) but greedy global assembly breaks
   down, which is where better methods have room.

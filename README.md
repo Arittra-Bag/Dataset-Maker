@@ -87,8 +87,9 @@ val only). Source: [`docs/results/dm-bench-0.1.0_edge-greedy-0.1_eval-1.0.json`]
 | medium | 0.865 [0.820, 0.907] | 0.851 | 0.300 |
 | hard | 0.246 [0.224, 0.267] | 0.640 | 0.000 |
 
-val and test-dev scores are in the card. Random placement scores 0 on every
-metric of val and test-dev on the same release
+val and test-dev scores are in the card. Random placement (`random@0.1`)
+scores 0 on every headline metric of val and test-dev on the same release;
+only the loosest tau-curve point is nonzero, at most 0.0042
 ([results file](docs/results/dm-bench-0.1.0_random_val-testdev_eval-1.0.json)).
 
 ## Run locally
