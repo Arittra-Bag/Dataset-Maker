@@ -301,7 +301,10 @@ def _candidate_scores(score: PageScore, candidates, gt_pairs) -> None:
         nbrs.setdefault(b, set()).add(a)
     hits1 = hits5 = rr = 0.0
     for fid, true in nbrs.items():
-        ranked = [c[0] if isinstance(c, (list, tuple)) else c for c in candidates.get(fid, [])]
+        raw = candidates.get(fid)
+        raw = raw if isinstance(raw, (list, tuple)) else []
+        ranked = [c[0] if isinstance(c, (list, tuple)) and c else c for c in raw]
+        ranked = [c for c in ranked if isinstance(c, str)]    # malformed entries never match
         rank = next((k + 1 for k, c in enumerate(ranked) if c in true), None)
         hits1 += rank == 1
         hits5 += rank is not None and rank <= 5

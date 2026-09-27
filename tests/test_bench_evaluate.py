@@ -155,3 +155,12 @@ def test_malformed_fragments_field_scores_zero(pages, bad):
     s = E.score_page(page, {"fragments": bad})
     assert s.placed == 0
     assert s.direct_acc == 0.0
+
+
+@pytest.mark.parametrize("bad", [7, "f001", [{"x": 1}], [[]], [None, 3.5]])
+def test_malformed_candidates_score_zero(pages, bad):
+    page, ans, _ = pages[0]
+    cands = {fid: bad for fid in ans["fragments"]}
+    s = E.score_page(page, dict(baselines.oracle_solution(ans), candidates=cands))
+    assert (s.hit1, s.hit5, s.mrr) == (0.0, 0.0, 0.0)
+    assert s.direct_acc == 1.0                    # placements still scored
