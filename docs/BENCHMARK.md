@@ -54,7 +54,9 @@ pose information:
 3. rotation by an integer millidegree angle with an exact affine (RGB
    bilinear, alpha nearest);
 4. tight crop to alpha plus a random 0 to 8 px margin per side, so the canvas
-   size says nothing about the angle;
+   is a function of the fragment's own mask plus independent padding and adds
+   no information beyond the mask (an uncropped rotation canvas revealed the
+   angle modulo 90 degrees exactly);
 5. blur, noise, JPEG in the fragment's own frame;
 6. RGB zeroed wherever alpha is 0; alpha is exactly {0, 255}.
 
@@ -71,7 +73,7 @@ With public seeds anyone could regenerate answers, so the `test` split
 derives every random choice (document, tear, rotation, noise, ids) from a
 secret held by the maintainer (`DM_BENCH_TEST_SECRET`). The release ships
 test puzzles only, plus a commitment in `benchmark.json`:
-`secret_sha256 = sha256("dm-bench/0.1.0/test/" + secret)` and the sha256 of the
+`secret_sha256 = sha256("dm-bench/0.1.0/test/" + secret.strip().lower())` and the sha256 of the
 canonical test answers. `eval` regenerates test answers from the secret. The
 secret is revealed when v0.1 is retired, so the commitment can be checked.
 
@@ -143,6 +145,12 @@ sheared, singular or unknown entries count as unplaced and are reported as
 95% bootstrap CI that resamples documents (B = 10000, fixed seed), and pages
 are sorted before aggregation, so results do not depend on file order.
 
+The percentile bootstrap undercovers with few documents. Measured in
+simulation (1 to 3 pages per document, intra-document correlation, 300 runs
+each), the nominal 95% interval covered the true mean in 91% of runs with 10
+documents, 93% with 20 and 96% with 30. Treat test-dev intervals (10 documents
+per tier) as roughly 90% intervals.
+
 ## Baselines
 
 | method | what it is |
@@ -166,8 +174,7 @@ harness. Window length, hypothesis count and border tolerance were tuned on
 commit e2faa55 on macOS arm64 (release sha256 `877b489cfd8e8ad8...` for that
 local build; the canonical release is built in CI and will have its own
 digest, at least because `benchmark.json` records the build environment).
-157 pages solved in 6.6 min
-with 8 workers on an Apple M4.
+157 pages in total.
 
 | tier | split | pages (docs) | direct_acc [95% CI] | neighbor_acc [95% CI] | perfect | adjacency F1 | Hit@1 |
 |------|-------|--------------|---------------------|-----------------------|---------|--------------|-------|
