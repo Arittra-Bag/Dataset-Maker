@@ -77,6 +77,11 @@ test puzzles only, plus a commitment in `benchmark.json`:
 canonical test answers. `eval` regenerates test answers from the secret. The
 secret is revealed when v0.1 is retired, so the commitment can be checked.
 
+Canonical 0.1.0 commitment (release_sha256 `6fe00ba8...b185ed`):
+
+- `secret_sha256`: `74d2bc987213c9e796bbf4de54dfad09caf02e40cfee842ce05533643f2adc5d`
+- `answers_sha256`: `bdc3a674a6ca064cf029f8d6dc37825b951daf9703c1394afc289d5a8360ec9c`
+
 ## Release layout
 
 ```
@@ -156,7 +161,7 @@ per tier) as roughly 90% intervals.
 | method | what it is |
 |--------|-----------|
 | `oracle` | reads the answers; harness self-check only (must score 1.0), refused on test |
-| `random` | uniform random rigid poses; the floor (0 by construction) |
+| `random@0.1` | uniform random rigid poses; the floor (not 0 by construction: two fragments can line up by chance) |
 | `edge-greedy@0.1` | the baseline (`src/bench/solver.py`) |
 
 edge-greedy: Moore-traced contours cut into ~96 px windows; complementary
@@ -170,14 +175,19 @@ harness. Window length, hypothesis count and border tolerance were tuned on
 
 ### Results
 
-`edge-greedy@0.1`, eval_version 1.0, public splits of dm-bench 0.1.0 built at
-commit e2faa55 on macOS arm64 (release sha256 `877b489cfd8e8ad8...` for that
-local build; the canonical release is built in CI and will have its own
-digest, at least because `benchmark.json` records the build environment).
-157 pages in total.
+`edge-greedy@0.1`, eval_version 1.0, canonical dm-bench 0.1.0 release
+(val, test-dev, test), release_sha256
+`6fe00ba8fac1e39b62cfa78a266095ba7e24c594d0fb2b5442b1148266b185ed`, built by
+the maintainer on macOS arm64 at commit 4847932 (CI on Linux reproduces the
+pinned golden digests). Source:
+[`results/dm-bench-0.1.0_edge-greedy-0.1_eval-1.0.json`](results/dm-bench-0.1.0_edge-greedy-0.1_eval-1.0.json).
+307 pages in total.
 
 | tier | split | pages (docs) | direct_acc [95% CI] | neighbor_acc [95% CI] | perfect | adjacency F1 | Hit@1 |
 |------|-------|--------------|---------------------|-----------------------|---------|--------------|-------|
+| easy | test | 48 (30) | 0.993 [0.981, 1.000] | 0.994 [0.978, 1.000] | 0.958 | 0.980 | 0.997 |
+| medium | test | 50 (30) | 0.865 [0.820, 0.907] | 0.851 [0.800, 0.900] | 0.300 | 0.893 | 0.959 |
+| hard | test | 52 (30) | 0.246 [0.224, 0.267] | 0.640 [0.591, 0.686] | 0.000 | 0.733 | 0.928 |
 | easy | test-dev | 13 (10) | 0.973 [0.927, 1.000] | 0.979 [0.942, 1.000] | 0.846 | 0.984 | 1.000 |
 | medium | test-dev | 16 (10) | 0.673 [0.555, 0.765] | 0.687 [0.570, 0.782] | 0.125 | 0.743 | 0.945 |
 | hard | test-dev | 19 (10) | 0.221 [0.203, 0.243] | 0.626 [0.564, 0.686] | 0.000 | 0.695 | 0.913 |
@@ -185,11 +195,21 @@ digest, at least because `benchmark.json` records the build environment).
 | medium | val | 37 (20) | 0.824 [0.764, 0.888] | 0.823 [0.764, 0.883] | 0.432 | 0.861 | 0.975 |
 | hard | val | 33 (20) | 0.255 [0.228, 0.286] | 0.707 [0.659, 0.761] | 0.000 | 0.800 | 0.940 |
 
-- `test-dev` is the number to cite: solver parameters were tuned on `val`, and
-  the medium-tier gap (0.824 on val vs 0.673 on test-dev) shows why.
-- `random` scores 0.000 on every metric, tier and split (the floor).
-- Held-out `test` scores are published once the canonical release is built
-  with the secret; none are claimed here.
+- `test` is the number to cite: it is held out, never used for tuning, and
+  has the most documents.
+- test-dev is small (10 documents per tier) and noisy: on medium it scores
+  0.673 while val and test score 0.824 and 0.865. Test is within val's
+  interval on every tier (hard 0.246 vs 0.255), so that dip is consistent
+  with sampling variation; overlap alone cannot rule out some tuning effect.
+  Its intervals cover roughly 90% (see the bootstrap note above).
+- The val and test-dev rows are identical to an earlier independent build of
+  the public splits, as the determinism guarantee requires.
+- `random@0.1` scores 0.000 on every headline metric (direct, neighbor,
+  perfect, adjacency) of val and test-dev on this release
+  ([results file](results/dm-bench-0.1.0_random_val-testdev_eval-1.0.json)).
+  Only the loosest tau-curve point is nonzero: medium val direct 0.0042 and
+  neighbor 0.0011 at tau = 2% (curve AUC 0.001 and 0.0003). It was not run
+  on test.
 - Reading the table: easy is close to solved; hard is not. On hard, pairwise
   matching is still good (Hit@1 above 0.9) but greedy global assembly breaks
   down, which is where better methods have room.

@@ -76,19 +76,21 @@ python -m src.bench solve --release dm-bench-v0.1 --out solutions --workers 8
 python -m src.bench eval  --release dm-bench-v0.1 --solutions solutions
 ```
 
-Baseline on test-dev (measured; val was used for tuning, see the card).
-Source: `eval` results file for `edge-greedy@0.1`, eval_version 1.0,
-release_sha256 `877b489cfd8e8ad84a2d8d55961a993f4bad4a5f1aa1e5483d412a6142fdbbc0`
-(public splits of dm-bench 0.1.0):
+Baseline on the held-out test split (30 documents per tier; solver tuned on
+val only). Source: [`docs/results/dm-bench-0.1.0_edge-greedy-0.1_eval-1.0.json`](docs/results/dm-bench-0.1.0_edge-greedy-0.1_eval-1.0.json),
+`edge-greedy@0.1`, eval_version 1.0, release_sha256
+`6fe00ba8fac1e39b62cfa78a266095ba7e24c594d0fb2b5442b1148266b185ed`:
 
 | tier | direct_acc [95% CI] | neighbor_acc | perfect pages |
 |------|---------------------|--------------|---------------|
-| easy | 0.973 [0.927, 1.000] | 0.979 | 0.846 |
-| medium | 0.673 [0.555, 0.765] | 0.687 | 0.125 |
-| hard | 0.221 [0.203, 0.243] | 0.626 | 0.000 |
+| easy | 0.993 [0.981, 1.000] | 0.994 | 0.958 |
+| medium | 0.865 [0.820, 0.907] | 0.851 | 0.300 |
+| hard | 0.246 [0.224, 0.267] | 0.640 | 0.000 |
 
-Random placement (`--method random`, same release and eval_version) scores 0
-on every metric. No held-out test scores are claimed yet.
+val and test-dev scores are in the card. Random placement (`random@0.1`)
+scores 0 on every headline metric of val and test-dev on the same release;
+only the loosest tau-curve point is nonzero, at most 0.0042
+([results file](docs/results/dm-bench-0.1.0_random_val-testdev_eval-1.0.json)).
 
 ## Run locally
 

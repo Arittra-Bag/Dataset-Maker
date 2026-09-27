@@ -8,7 +8,8 @@ Per page, for a submitted solution {fragment id -> 2x3 affine, fragment px
     direct_acc      best global rigid alignment G (hypotheses from each placed
                     fragment, refit by Kabsch on inliers until stable); share of
                     present fragments with e <= tau. Fewer than 2 inliers -> 0,
-                    so random or single-fragment submissions score exactly 0.
+                    so a single-fragment submission scores exactly 0; random
+                    ones score 0 unless two fragments line up by chance.
     neighbor_acc    GT adjacent pairs (shared edge >= MIN_SHARED_PX) whose two
                     fragments fit one rigid G (pair Kabsch fit, either anchor, or
                     the page's global G) within tau. Symmetric; perfect => 1.
