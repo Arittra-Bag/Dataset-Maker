@@ -20,7 +20,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python 3.10
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v6
       with:
         python-version: "3.10"
     - name: Install dependencies
@@ -37,3 +37,33 @@ jobs:
     - name: Test with pytest
       run: |
         pytest
+
+  bench:
+    # dm-bench: determinism across processes/threads/paths, answer-free solve,
+    # harness self-check. Small slice so it stays within a few minutes.
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v6
+      with:
+        python-version: "3.10"
+    - name: Install dependencies (hash-locked wheels)
+      run: pip install --only-binary :all: --require-hashes -r requirements-bench.txt
+    - name: Build the same slice twice under different conditions
+      run: |
+        PYTHONHASHSEED=0 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 \
+          python -m src.bench build --out /tmp/rel_a --splits val test-dev --limit-docs 1 --workers 1
+        PYTHONHASHSEED=4242 OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 \
+          python -m src.bench build --out /tmp/other/rel_b --splits val test-dev --limit-docs 1 --workers 2
+        diff /tmp/rel_a/CONTENT.sha256 /tmp/other/rel_b/CONTENT.sha256
+        diff /tmp/rel_a/SHA256SUMS /tmp/other/rel_b/SHA256SUMS
+        python -m src.bench verify /tmp/rel_a
+    - name: Solve from puzzles only, then score
+      run: |
+        mkdir -p /tmp/isolated && cp -r /tmp/rel_a/puzzles /tmp/isolated/
+        python -m src.bench solve --release /tmp/isolated --out /tmp/sol --splits val test-dev --workers 2
+        python -m src.bench eval --release /tmp/rel_a --solutions /tmp/sol --splits val test-dev --out /tmp/results.json
+        python -m src.bench solve --release /tmp/rel_a --out /tmp/oracle --method oracle --splits val test-dev
+        python -m src.bench eval --release /tmp/rel_a --solutions /tmp/oracle --splits val test-dev --out /tmp/oracle.json
+        python -c "import json; r = json.load(open('/tmp/oracle.json'))['scores']; assert all(s['direct_acc']['mean'] == 1.0 for t in r.values() for s in t.values()), r"

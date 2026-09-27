@@ -58,8 +58,37 @@ Workflow: **upload PDF → configure tear → generate → inspect ground truth 
 * **Export**: the ZIP, its real contents, and a runnable reassembly snippet.
 
 Every number in the UI is measured from the current run (stage timings use
-`time.perf_counter`). There is no solver in this repository yet, so no
-reconstruction accuracy is shown anywhere.
+`time.perf_counter`). The app shows no reconstruction accuracy; solver
+scores come only from the benchmark's `eval` command (below).
+
+## Benchmark: dm-bench v0.1
+
+`python -m src.bench` turns the generator into a reassembly benchmark:
+seeded synthetic documents, three tiers (easy; rotated with scan-like noise;
+plus paper loss and missing pieces), public val / test-dev splits and a
+secret-seeded held-out test split, an evaluation harness (direct and neighbour
+accuracy, perfect pages, adjacency F1, Hit@k, bootstrap CIs) and a
+deterministic baseline, `edge-greedy`. Full card: [docs/BENCHMARK.md](docs/BENCHMARK.md).
+
+```bash
+python -m src.bench build --out dm-bench-v0.1 --workers 8
+python -m src.bench solve --release dm-bench-v0.1 --out solutions --workers 8
+python -m src.bench eval  --release dm-bench-v0.1 --solutions solutions
+```
+
+Baseline on test-dev (measured; val was used for tuning, see the card).
+Source: `eval` results file for `edge-greedy@0.1`, eval_version 1.0,
+release_sha256 `877b489cfd8e8ad84a2d8d55961a993f4bad4a5f1aa1e5483d412a6142fdbbc0`
+(public splits of dm-bench 0.1.0):
+
+| tier | direct_acc [95% CI] | neighbor_acc | perfect pages |
+|------|---------------------|--------------|---------------|
+| easy | 0.973 [0.927, 1.000] | 0.979 | 0.846 |
+| medium | 0.673 [0.555, 0.765] | 0.687 | 0.125 |
+| hard | 0.221 [0.203, 0.243] | 0.626 | 0.000 |
+
+Random placement (`--method random`, same release and eval_version) scores 0
+on every metric. No held-out test scores are claimed yet.
 
 ## Run locally
 
@@ -159,17 +188,21 @@ dataset.zip
   per page on every run.
 * **Fragment count** can be lower than requested if a seed's warped cell
   vanishes. The produced count is reported.
-* **Planar tears only.** No rotation, missing pieces, paper texture, fibre
-  edges or scan noise yet.
+* **Planar tears only** in app exports. The benchmark tiers add rotation,
+  scan-like noise, JPEG, paper loss along tears and missing pieces; paper
+  texture and fibre edges are not modelled.
 * **Lossy palette PNG** keeps offsets exact but pixel values approximate.
 
-## Roadmap (planned, not implemented)
+## Roadmap
 
-1. Versioned benchmark definition: fixed seeds, difficulty tiers, train /
-   validation / test splits.
-2. Evaluation harness with pairwise and global reassembly metrics.
-3. Baseline reassembly solver so the benchmark has a reference number.
-4. Real-scan validation set to measure the synthetic-to-real gap.
+Done in dm-bench v0.1 (see [docs/BENCHMARK.md](docs/BENCHMARK.md)): versioned
+benchmark with tiers, splits and a secret-seeded test split; evaluation
+harness; deterministic baseline solver.
+
+Planned, not implemented:
+1. Real-scan validation set to measure the synthetic-to-real gap.
+2. Mixed-pages tier (fragments from several pages in one bag).
+3. Stronger baselines (global optimisation instead of greedy placement).
 
 ## Layout
 
@@ -187,6 +220,8 @@ src/noise.py           vectorized value noise (domain warp)
 src/optimizer.py       PNG encoding / optional palette quantization
 src/queue_manager.py   priority job queue (binary min-heap)
 src/workspace.py       temp-file registry
+src/bench/             dm-bench: docgen, fragments, build, evaluate, solver, CLI
+docs/BENCHMARK.md      benchmark card: format, metrics, splits, claims
 scripts/make_assets.py regenerates assets/sample.pdf and the README figure
 tests/                 invariants, determinism, manifest, round-trip, UI smoke
 ```
