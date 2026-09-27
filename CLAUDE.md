@@ -44,8 +44,9 @@ Pythons you may need unpinned numpy/scipy/pillow/pymupdf.
 - Keep `src/` UI-free (no `gradio` imports) so it stays testable. Gradio lives
   only in `ui/` and `app.py`. Handlers format; they don't compute.
 - Every claim in UI copy (`ui/content.py`) or README must be enforced by code
-  or a test. Any number shown must come from a measured run. No solver exists
-  yet: never show reconstruction accuracy.
+  or a test. Any number shown must come from a measured run. The app never
+  shows reconstruction accuracy; benchmark numbers in docs must come from an
+  `eval` results file (cite release_sha256, eval_version, solver@version).
 - Images are `(H, W, 3)` uint8 RGB end-to-end; pieces use black background.
 - `manifest.json` `(x, y)` offsets ARE the stitching labels. Schema changes:
   bump `MANIFEST_SCHEMA_VERSION`, update `packager._README`, README.md and
@@ -54,6 +55,18 @@ Pythons you may need unpinned numpy/scipy/pillow/pymupdf.
   a change to noise/sampling/tearing or a dependency bump breaks it, published
   datasets can no longer be regenerated: update deliberately, never silently.
 - No em/en dashes or emojis in copy, docs, commits or PR text.
+
+## dm-bench (`src/bench/`, see docs/BENCHMARK.md)
+`python -m src.bench build|verify|solve|eval`. docgen -> fragments -> build
+-> evaluate; `solver.py` is the edge-greedy baseline.
+- Every page is a pure function of (entropy, tier, doc, page) via keyed
+  `canon.stream`; never `hash()`, `spawn()`, host trig in stored numbers, or
+  non-canonical JSON. `tests/test_bench_golden.py` pins output: bump
+  `BENCH_VERSION` instead of updating digests.
+- The `test` split comes from `DM_BENCH_TEST_SECRET`; never commit, log or
+  hard-code a real secret. Tests use a throwaway value.
+- `solver.py` must stay answer-free (no imports of build/docgen/fragments/
+  tearing/evaluate); a test enforces it. Tune only on `val`.
 
 ## Deploy
 HF Spaces reads the YAML header in `README.md` (`sdk: gradio`, `app_file`).
