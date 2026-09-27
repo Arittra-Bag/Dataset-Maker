@@ -27,6 +27,7 @@ def test_cli_round_trip(tmp_path, monkeypatch, capsys):
             res = json.load(fh)
         assert res["eval_version"] == "1.0"
         assert res["benchmark"] == "dm-bench@0.1.0"
+        assert res["solvers"] == [f"{method}@0.1"]
         assert len(res["release_sha256"]) == 64
         assert res["scores"]["easy"]["val"]["direct_acc"]["mean"] == expected
 

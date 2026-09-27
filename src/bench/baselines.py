@@ -11,9 +11,13 @@ import numpy as np
 
 from .evaluate import SOLUTION_SCHEMA
 
+# Recorded in results files so every score names what produced it.
+RANDOM = "random@0.1"
+ORACLE = "oracle@0.1"
+
 
 def oracle_solution(answer: dict) -> dict:
-    return {"schema": SOLUTION_SCHEMA, "page_id": answer["page_id"],
+    return {"schema": SOLUTION_SCHEMA, "page_id": answer["page_id"], "solver": ORACLE,
             "fragments": {fid: {"affine": v["affine"]} for fid, v in answer["fragments"].items()}}
 
 
@@ -25,7 +29,8 @@ def random_solution(puzzle: dict, seed: int) -> dict:
         a = float(rng.uniform(0, 2 * math.pi))
         c, s = math.cos(a), math.sin(a)
         frags[f["id"]] = {"affine": [[c, -s, float(rng.uniform(0, w))], [s, c, float(rng.uniform(0, h))]]}
-    return {"schema": SOLUTION_SCHEMA, "page_id": puzzle["page_id"], "fragments": frags}
+    return {"schema": SOLUTION_SCHEMA, "page_id": puzzle["page_id"], "solver": RANDOM,
+            "fragments": frags}
 
 
 def run_method(job: tuple) -> tuple:
