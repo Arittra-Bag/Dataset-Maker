@@ -376,9 +376,12 @@ def write_checksums(root: str) -> None:
         with open(os.path.join(root, *rel.split("/")), "rb") as fh:
             data = fh.read()
         byte_lines.append(f"{canon.sha256_bytes(data)}  {rel}\n")
-        digest = (canon.content_digest_png(data) if rel.endswith(".png")
-                  else canon.content_digest_json(data) if rel.endswith(".json")
-                  else canon.sha256_bytes(data))
+        if rel.endswith(".png"):
+            digest = canon.content_digest_png(data)
+        elif rel.endswith(".json"):
+            digest = canon.content_digest_json(data)
+        else:
+            digest = canon.sha256_bytes(data)
         content_lines.append(f"{digest}  {rel}\n")
     _write(root, "SHA256SUMS", "".join(byte_lines).encode())
     _write(root, "CONTENT.sha256", "".join(content_lines).encode())

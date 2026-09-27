@@ -22,7 +22,6 @@ Tolerance tau = TAU_FRAC * page width; also reported at TAU_CURVE.
 """
 from __future__ import annotations
 
-import json
 import math
 import os
 from dataclasses import dataclass, field
@@ -345,7 +344,7 @@ def load_solution(path: str) -> dict | None:
         return None
     try:
         sol = _read_json(path)
-    except (ValueError, json.JSONDecodeError):
+    except ValueError:                            # includes JSONDecodeError
         return None
     return sol if isinstance(sol, dict) else None
 

@@ -33,7 +33,7 @@ class Corruption:
     rotate: bool = False
     blur_radius: float = 0.0          # Pillow GaussianBlur radius (0 = off)
     noise_halfwidth: int = 0          # Irwin-Hall: sum of 4 U{-a..a} integers (0 = off)
-    jpeg_quality: int = 0             # 0 = off
+    jpeg_quality: int = 0             # off when zero
     erosion_px: tuple[int, int] = (0, 0)   # inclusive range of band width (0 = off)
 
 
@@ -141,8 +141,8 @@ def make_fragment(page_rgb: np.ndarray, piece, spec: Corruption, rngs: dict) -> 
     A = np.array([[1.0, 0.0, float(x0)], [0.0, 1.0, float(y0)], [0.0, 0.0, 1.0]])
     mdeg = int(rngs["rotation"].integers(0, 360000)) if spec.rotate else 0
     if mdeg:
-        rgb, alpha, A_rot = _rotate(rgb, alpha, mdeg)
-        A = A @ A_rot
+        rgb, alpha, a_rot = _rotate(rgb, alpha, mdeg)
+        A = A @ a_rot
 
     ys, xs = np.nonzero(alpha)
     if ys.size == 0:
@@ -157,14 +157,14 @@ def make_fragment(page_rgb: np.ndarray, piece, spec: Corruption, rngs: dict) -> 
     # final canvas coord q -> pre-crop canvas coord q + (cx0 - pl, cy0 - pt)
     A = A @ np.array([[1.0, 0.0, float(cx0 - pl)], [0.0, 1.0, float(cy0 - pt)], [0.0, 0.0, 1.0]])
     # Continuous (centres at +0.5) -> integer pixel-centre convention.
-    A_int = (np.array([[1, 0, -0.5], [0, 1, -0.5], [0, 0, 1.0]]) @ A
+    a_int = (np.array([[1, 0, -0.5], [0, 1, -0.5], [0, 0, 1.0]]) @ A
              @ np.array([[1, 0, 0.5], [0, 1, 0.5], [0, 0, 1.0]]))
 
     out_rgb = _corrupt(out_rgb, out_a, spec, rngs)
     rgba = np.dstack([out_rgb, out_a])
     return Fragment(
         rgba=rgba,
-        affine=[[float(v) for v in A_int[0]], [float(v) for v in A_int[1]]],
+        affine=[[float(v) for v in a_int[0]], [float(v) for v in a_int[1]]],
         rot_mdeg=mdeg,
         erosion_px=width,
         label=int(piece.label),
