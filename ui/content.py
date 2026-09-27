@@ -142,9 +142,10 @@ LIMITATIONS_HTML = """
 
 SCOPE_HTML = f"""
 <div class="dm-footer">
-  <b>Scope:</b> dataset generator only. Benchmark splits, evaluation metrics and a
-  baseline reassembly solver are planned and not implemented; no number on this
-  page comes from a solver. Source, tests and roadmap:
+  <b>Scope:</b> this page is the dataset generator. The benchmark (versioned
+  splits, evaluation harness, baseline solver) is the command-line tool
+  <code>python -m src.bench</code>, documented in docs/BENCHMARK.md; no number on
+  this page comes from a solver. Source, tests and roadmap:
   <a href="{REPO_URL}" target="_blank" rel="noopener">{REPO_URL.removeprefix("https://")}</a>
 </div>
 """
