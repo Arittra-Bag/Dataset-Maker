@@ -51,7 +51,8 @@ def test_solves_easy_page_without_answers(easy_page, tmp_path):
 def test_deterministic(easy_page):
     rel, pid, _ = easy_page
     pdir = os.path.join(rel, "puzzles", "easy", "val", pid)
-    assert solver.solve(pdir) == solver.solve(pdir)
+    first, second = solver.solve(pdir), solver.solve(pdir)
+    assert first == second
 
 
 def test_moore_contour_terminates_and_orders():

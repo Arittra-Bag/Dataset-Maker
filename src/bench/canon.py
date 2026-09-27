@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import math
 from decimal import Decimal, localcontext
 
 import numpy as np
@@ -109,7 +110,7 @@ FLOAT_DECIMALS = 9
 def _canon(obj):
     if isinstance(obj, float):
         v = round(obj, FLOAT_DECIMALS) + 0.0
-        if v != v or v in (float("inf"), float("-inf")):
+        if not math.isfinite(v):
             raise ValueError("non-finite float in canonical JSON")
         return v
     if isinstance(obj, (np.floating,)):
