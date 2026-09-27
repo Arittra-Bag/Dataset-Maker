@@ -29,3 +29,7 @@ def test_cli_round_trip(tmp_path, monkeypatch, capsys):
         assert res["benchmark"] == "dm-bench@0.1.0"
         assert len(res["release_sha256"]) == 64
         assert res["scores"]["easy"]["val"]["direct_acc"]["mean"] == expected
+
+
+def test_solve_fails_on_missing_release(tmp_path):
+    assert main(["solve", "--release", str(tmp_path / "nope"), "--out", str(tmp_path / "s")]) == 2

@@ -56,6 +56,9 @@ def _cmd_solve(args) -> int:
     if args.method == "oracle" and "test" in args.splits:
         print("oracle reads answers; it cannot run on the held-out test split", file=sys.stderr)
         return 2
+    if not os.path.isdir(os.path.join(args.release, "puzzles")):
+        print(f"no puzzles/ directory in {args.release!r}", file=sys.stderr)
+        return 2
     jobs = [(args.release, t, s, p, args.method) for t, s, p in _pages(args.release, args.tiers, args.splits)]
     if args.workers > 1:
         from concurrent.futures import ProcessPoolExecutor
