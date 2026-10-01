@@ -102,7 +102,10 @@ Both digests are lowercase hex SHA-256. Byte for byte:
 
 Each answer record carries its `page_id`, tier, split, document and page
 index and fragment ids, so adding or dropping a test page changes
-`answers_sha256`. The same recipe in standard-library Python:
+`answers_sha256`. One field, `ink_frac` (the share of ink pixels in each
+fragment), is measured on the rendered page, so `answers_sha256` only
+reproduces under the PyMuPDF version recorded in `build_env`. The hashing
+itself needs only the Python standard library:
 
 ```python
 import hashlib, json
@@ -114,6 +117,7 @@ def canonical_bytes(record):
                        ensure_ascii=True, allow_nan=False) + "\n").encode()
 
 def answers_sha256(records):
+    # records: every test answer record of all three tiers in one list.
     pages = sorted(hashlib.sha256(canonical_bytes(r)).hexdigest() for r in records)
     return hashlib.sha256("".join(pages).encode()).hexdigest()
 
@@ -121,11 +125,13 @@ def secret_sha256(secret):
     return hashlib.sha256(("dm-bench/0.1.0/test/" + secret.strip().lower()).encode()).hexdigest()
 ```
 
-After the reveal there are two ways to check. Rebuild the test split with
-`DM_BENCH_TEST_SECRET` set and compare `test_commitment` in the new
-`benchmark.json` (and the test puzzle files against `SHA256SUMS`). Or
-regenerate the records with `split_answers(release, tier, "test", secret)`
-for each tier and apply the recipe above.
+After the reveal there are two ways to check, both in the environment
+recorded in `build_env` (`requirements-bench.txt` pins those libraries). Rebuild the test
+split with `DM_BENCH_TEST_SECRET` set and compare `test_commitment` in the
+new `benchmark.json`, and the test puzzle files against `CONTENT.sha256`
+(decoded content, so an encoder change does not count as a difference). Or
+call `split_answers(release, tier, "test", secret)` for each tier, pool the
+`.values()` of all three into one list and apply the recipe above.
 
 #### How to use the splits
 
@@ -288,8 +294,9 @@ pinned golden digests). Source:
 - Output `workers > 1` is byte-identical to sequential builds.
 - **Geometry deterministic, pixels renderer-dependent.** Tears, poses and
   adjacency depend only on the seed, the tier parameters and the page size,
-  never on rendered pixels. Fragment pixels come from the PyMuPDF render, so
-  another PyMuPDF version can change them. `benchmark.json` records the
+  never on rendered pixels. Fragment pixels, and the per-fragment `ink_frac`
+  in each answer, come from the PyMuPDF render, so another PyMuPDF version
+  can change them. `benchmark.json` records the
   versions used (`build_env`). How much this moves scores is tracked in
   [#10](https://github.com/Arittra-Bag/Dataset-Maker/issues/10).
 
