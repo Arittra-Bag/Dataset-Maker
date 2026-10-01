@@ -76,9 +76,11 @@ test puzzles only, plus a commitment in `benchmark.json`:
 `secret_sha256 = sha256("dm-bench/0.1.0/test/" + secret.strip().lower())` and the sha256 of the
 canonical test answers. `eval` regenerates test answers from the secret.
 
-**Reveal.** The v0.1 test secret is published when the v0.2 held-out test
-split is published, or on 2027-09-30, whichever comes first. Until then
-nobody outside can verify the commitment, which is why the date is fixed.
+**Reveal.** The v0.1 test secret is published in the dm-bench dataset
+repository on Hugging Face when the v0.2 held-out test split is published,
+or on 2027-09-30, whichever comes first. It is published verbatim, because
+the commitment is over the exact text. Until then nobody outside can verify
+the commitment, which is why the date is fixed.
 
 Canonical 0.1.0 commitment (release_sha256 `6fe00ba8...b185ed`):
 
@@ -92,20 +94,25 @@ Both digests are lowercase hex SHA-256. Byte for byte:
 1. **Canonical JSON** of one answer record: keys sorted, separators `,` and
    `:` with no spaces, ASCII only, floats rounded to 9 decimals, `-0.0`
    written as `0.0`, NaN and infinity rejected, then exactly one trailing
-   newline. Encoded as UTF-8.
+   newline. Encoded as UTF-8. Floats are written the way Python's
+   `repr(float)` writes them: shortest round-trip digits, `1.0` keeps its
+   `.0`, exponent form below 1e-4 (`1.7453e-05`). Integers stay integers.
 2. **Per page:** SHA-256 of those bytes.
 3. **`answers_sha256`:** the per-page digests of every `test` page in all
    three tiers, sorted as text, joined with no separator, then SHA-256 of
    that string.
 4. **`secret_sha256`:** SHA-256 of `"dm-bench/0.1.0/test/"` followed by the
-   secret, stripped and lowercased.
+   secret text, stripped and lowercased. The secret is a hex string and
+   generation uses `int(secret, 16)`, but the commitment is over the text,
+   so it must be checked against the revealed string as published.
 
 Each answer record carries its `page_id`, tier, split, document and page
 index and fragment ids, so adding or dropping a test page changes
-`answers_sha256`. One field, `ink_frac` (the share of ink pixels in each
-fragment), is measured on the rendered page, so `answers_sha256` only
-reproduces under the PyMuPDF version recorded in `build_env`. The hashing
-itself needs only the Python standard library:
+`answers_sha256`. One field, `ink_frac` (the share of a fragment's pixels
+whose RGB mean is below 200 on the clean page, under the pre-erosion mask),
+is measured on the rendered page, so `answers_sha256` only reproduces under
+the PyMuPDF version recorded in `build_env`. The hashing itself needs only
+the Python standard library:
 
 ```python
 import hashlib, json
@@ -126,8 +133,10 @@ def secret_sha256(secret):
 ```
 
 After the reveal there are two ways to check, both in the environment
-recorded in `build_env` (`requirements-bench.txt` pins those libraries). Rebuild the test
-split with `DM_BENCH_TEST_SECRET` set and compare `test_commitment` in the
+recorded in `build_env`. For the canonical release that is numpy 1.26.4,
+scipy 1.13.1, Pillow 10.4.0, PyMuPDF 1.24.10 (MuPDF 1.24.9), built on
+macOS arm64 with Python 3.11, and `requirements-bench.txt` pins the same
+library versions. Rebuild the test split with `DM_BENCH_TEST_SECRET` set and compare `test_commitment` in the
 new `benchmark.json`, and the test puzzle files against `CONTENT.sha256`
 (decoded content, so an encoder change does not count as a difference). Or
 call `split_answers(release, tier, "test", secret)` for each tier, pool the
@@ -135,10 +144,10 @@ call `split_answers(release, tier, "test", secret)` for each tier, pool the
 
 #### How to use the splits
 
-- Tune on `val`.
+- Fit learned methods on `train` (built on demand), tune on `val`.
 - Use `test-dev` for public development checks.
 - The held-out `test` split is scored through the maintainer, since scoring
-  needs the secret.
+  needs the secret. There is no submission server.
 
 ## Release layout
 
@@ -192,8 +201,9 @@ G is the worst displacement of any convex-hull point of its mask:
 - **direct_acc**: share of present fragments within tau under the best global
   rigid alignment. Alignment: every placed fragment's pose gives a hypothesis,
   refit by Kabsch on its inliers until stable (deterministic LO-RANSAC). Fewer
-  than 2 inliers scores 0, so single-fragment submissions score exactly 0.
-  Random submissions score 0 unless two fragments line up by chance.
+  than 2 inliers scores 0, so a submission with fewer than 2 aligned
+  fragments scores exactly 0. Random submissions score 0 unless two fragments
+  line up within tau by chance.
 - **neighbor_acc**: share of ground-truth adjacent pairs (shared edge at least
   2*tau) whose two fragments fit one rigid map within tau. Symmetric, and a
   perfect page always scores 1.
@@ -205,7 +215,10 @@ G is the worst displacement of any convex-hull point of its mask:
   neighbor_acc. Per page, the share of fragments with such a neighbour that
   get one ranked first (Hit@1) or in the top five (Hit@5), and the mean
   reciprocal rank (MRR). Reported as the mean over pages that submit
-  candidates.
+  candidates: pages without `candidates` are left out, not scored 0, so
+  compare Hit@k only between solutions covering the same pages. A page that
+  submits candidates but has no qualifying neighbour pair scores 0 and is
+  counted. No confidence interval is computed for Hit@k.
 - **tau curve**: direct and neighbor accuracy at 0.25, 0.5, 1 and 2% of page
   width, plus their mean (AUC).
 
@@ -298,11 +311,12 @@ pinned golden digests). Source:
   `tests/test_bench_golden.py` pins one page per tier.
 - Output `workers > 1` is byte-identical to sequential builds.
 - **Geometry deterministic, pixels renderer-dependent.** Tears, poses and
-  adjacency depend only on the seed, the tier parameters and the page size,
-  never on rendered pixels. Fragment pixels, and the per-fragment `ink_frac`
-  in each answer, come from the PyMuPDF render, so another PyMuPDF version
-  can change them. `benchmark.json` records the
-  versions used (`build_env`). How much this moves scores is tracked in
+  adjacency depend only on the seed, the tier parameters and the page size
+  (given the pinned NumPy, SciPy and Pillow), never on rendered pixels.
+  Fragment pixels, the per-fragment `ink_frac` in each answer and the blank
+  counts in `benchmark.json` come from the PyMuPDF render, so another
+  PyMuPDF version can change them. `benchmark.json` records the versions
+  used (`build_env`). How much this moves scores is tracked in
   [#10](https://github.com/Arittra-Bag/Dataset-Maker/issues/10).
 
 Checked locally on macOS arm64 (Python 3.11). The golden digests were computed
