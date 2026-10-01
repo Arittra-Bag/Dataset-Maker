@@ -86,10 +86,14 @@
   font-size: 12px; color: var(--body-text-color-subdued); }
 
 /* ---- components ---------------------------------------------------------- */
-/* Gradio 4.44's Gallery `height` caps the root but the inner grid overflows the
-   page, so force scrolling on the inner container. */
+/* Gradio 4.44 sets the Gallery box to a fixed height with overflow hidden, but
+   the inner container is not tied to it, so the grid grows past the box and is
+   clipped instead of scrolling. Make the container fill the box and scroll the
+   grid inside it. */
 #dm-gallery { max-height: 60vh; }
-#dm-gallery .grid-wrap, #dm-gallery .thumbnails { max-height: 60vh; overflow-y: auto; }
+#dm-gallery .gallery-container { height: 100%; }
+#dm-gallery .grid-wrap { max-height: 100%; overflow-y: auto; }
+#dm-gallery .thumbnails { max-height: 60vh; overflow-y: auto; }
 #dm-gallery .caption-label { font-family: var(--font-mono); font-size: 11px; }
 
 #dm-gt-table table { font-family: var(--font-mono); font-size: 12px; }
