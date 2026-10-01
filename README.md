@@ -92,13 +92,18 @@ python -m src.bench eval  --release dm-bench-v0.1 --solutions solutions
 Baseline on the held-out test split (30 documents per tier; solver tuned on
 val only). Source: [`docs/results/dm-bench-0.1.0_edge-greedy-0.1_eval-1.0.json`](docs/results/dm-bench-0.1.0_edge-greedy-0.1_eval-1.0.json),
 `edge-greedy@0.1`, eval_version 1.0, release_sha256
-`6fe00ba8fac1e39b62cfa78a266095ba7e24c594d0fb2b5442b1148266b185ed`:
+`6fe00ba8fac1e39b62cfa78a266095ba7e24c594d0fb2b5442b1148266b185ed`.
 
-| tier | direct_acc [95% CI] | neighbor_acc | perfect pages |
-|------|---------------------|--------------|---------------|
-| easy | 0.993 [0.981, 1.000] | 0.994 | 0.958 |
-| medium | 0.865 [0.820, 0.907] | 0.851 | 0.300 |
-| hard | 0.246 [0.224, 0.267] | 0.640 | 0.000 |
+The number to read first is the hard tier: Hit@1 is 0.928 (on an average
+page, 92.8% of fragments have a true neighbour ranked first), yet the
+baseline reassembles 0 of 52 pages perfectly. Matching pieces is not the
+same as rebuilding the page, and an average score hides that gap.
+
+| tier | perfect pages | Hit@1 | direct_acc [95% CI] | neighbor_acc |
+|------|---------------|-------|---------------------|--------------|
+| easy | 0.958 | 0.997 | 0.993 [0.981, 1.000] | 0.994 |
+| medium | 0.300 | 0.959 | 0.865 [0.820, 0.907] | 0.851 |
+| hard | 0.000 | 0.928 | 0.246 [0.224, 0.267] | 0.640 |
 
 val and test-dev scores are in the card. Random placement (`random@0.1`)
 scores 0 on every headline metric of val and test-dev on the same release;
