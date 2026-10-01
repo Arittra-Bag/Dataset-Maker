@@ -343,8 +343,8 @@ def write_release(out: str, tiers: list[str], docs: dict[str, int],
     if "test" in splits:
         prefix = f"{BENCH_NAME}/{BENCH_VERSION}/test/"
         spec["test_commitment"] = {
-            # Reveal the secret when the version is retired; anyone can then
-            # check it against this digest.
+            # The secret is revealed on the date in docs/BENCHMARK.md
+            # ("Reveal"). Anyone can then check it against this digest.
             "secret_sha256": canon.sha256_bytes((prefix + secret_hex.strip().lower()).encode()),
             "answers_sha256": canon.sha256_bytes("".join(sorted(test_answers)).encode()),
         }
