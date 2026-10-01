@@ -74,13 +74,65 @@ derives every random choice (document, tear, rotation, noise, ids) from a
 secret held by the maintainer (`DM_BENCH_TEST_SECRET`). The release ships
 test puzzles only, plus a commitment in `benchmark.json`:
 `secret_sha256 = sha256("dm-bench/0.1.0/test/" + secret.strip().lower())` and the sha256 of the
-canonical test answers. `eval` regenerates test answers from the secret. The
-secret is revealed when v0.1 is retired, so the commitment can be checked.
+canonical test answers. `eval` regenerates test answers from the secret.
+
+**Reveal.** The v0.1 test secret is published when the v0.2 held-out test
+split is published, or on 2027-09-30, whichever comes first. Until then
+nobody outside can verify the commitment, which is why the date is fixed.
 
 Canonical 0.1.0 commitment (release_sha256 `6fe00ba8...b185ed`):
 
 - `secret_sha256`: `74d2bc987213c9e796bbf4de54dfad09caf02e40cfee842ce05533643f2adc5d`
 - `answers_sha256`: `bdc3a674a6ca064cf029f8d6dc37825b951daf9703c1394afc289d5a8360ec9c`
+
+#### Commitment recipe
+
+Both digests are lowercase hex SHA-256. Byte for byte:
+
+1. **Canonical JSON** of one answer record: keys sorted, separators `,` and
+   `:` with no spaces, ASCII only, floats rounded to 9 decimals, `-0.0`
+   written as `0.0`, NaN and infinity rejected, then exactly one trailing
+   newline. Encoded as UTF-8.
+2. **Per page:** SHA-256 of those bytes.
+3. **`answers_sha256`:** the per-page digests of every `test` page in all
+   three tiers, sorted as text, joined with no separator, then SHA-256 of
+   that string.
+4. **`secret_sha256`:** SHA-256 of `"dm-bench/0.1.0/test/"` followed by the
+   secret, stripped and lowercased.
+
+Each answer record carries its `page_id`, tier, split, document and page
+index and fragment ids, so adding or dropping a test page changes
+`answers_sha256`. The same recipe in standard-library Python:
+
+```python
+import hashlib, json
+
+def canonical_bytes(record):
+    # Records as returned by src.bench.evaluate.split_answers: floats are
+    # already rounded, so plain json reproduces the canonical bytes.
+    return (json.dumps(record, sort_keys=True, separators=(",", ":"),
+                       ensure_ascii=True, allow_nan=False) + "\n").encode()
+
+def answers_sha256(records):
+    pages = sorted(hashlib.sha256(canonical_bytes(r)).hexdigest() for r in records)
+    return hashlib.sha256("".join(pages).encode()).hexdigest()
+
+def secret_sha256(secret):
+    return hashlib.sha256(("dm-bench/0.1.0/test/" + secret.strip().lower()).encode()).hexdigest()
+```
+
+After the reveal there are two ways to check. Rebuild the test split with
+`DM_BENCH_TEST_SECRET` set and compare `test_commitment` in the new
+`benchmark.json` (and the test puzzle files against `SHA256SUMS`). Or
+regenerate the records with `split_answers(release, tier, "test", secret)`
+for each tier and apply the recipe above.
+
+#### How to use the splits
+
+- Tune on `val`.
+- Use `test-dev` for public development checks.
+- The held-out `test` split is scored through the maintainer, since scoring
+  needs the secret.
 
 ## Release layout
 
