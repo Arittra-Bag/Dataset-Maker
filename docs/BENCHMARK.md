@@ -192,8 +192,8 @@ G is the worst displacement of any convex-hull point of its mask:
 - **direct_acc**: share of present fragments within tau under the best global
   rigid alignment. Alignment: every placed fragment's pose gives a hypothesis,
   refit by Kabsch on its inliers until stable (deterministic LO-RANSAC). Fewer
-  than 2 inliers scores 0, so random or single-fragment submissions score
-  exactly 0.
+  than 2 inliers scores 0, so single-fragment submissions score exactly 0.
+  Random submissions score 0 unless two fragments line up by chance.
 - **neighbor_acc**: share of ground-truth adjacent pairs (shared edge at least
   2*tau) whose two fragments fit one rigid map within tau. Symmetric, and a
   perfect page always scores 1.
