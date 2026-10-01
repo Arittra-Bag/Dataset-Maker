@@ -64,10 +64,10 @@ def test_from_pdf_path_really_reads_the_saved_pdf(tmp_path):
 
 def test_missing_pdf_fails_loudly(tmp_path):
     (tmp_path / sens.INDEX).write_text(json.dumps({"documents": {}}))
+    doc = build.doc_range("val", build.DEFAULT_DOCS).start
     with sens.pdfs_as_source(str(tmp_path)):
         with pytest.raises(KeyError, match="no saved PDF"):
-            build.build_doc(build.PUBLIC_ENTROPY, "easy", "val",
-                            build.doc_range("val", build.DEFAULT_DOCS).start)
+            build.build_doc(build.PUBLIC_ENTROPY, "easy", "val", doc)
     assert build.make_document is docgen.make_document
 
 
@@ -102,7 +102,8 @@ def test_compare_renders_reports_size_and_direction(tmp_path):
     assert r["changed_pixel_mean_abs_diff"] == (10 + 6 + 5) / 3
     assert r["changed_pixel_fraction"]["max"] == 3 / 20
     swapped = sens.compare_renders(str(tmp_path / "b"), str(tmp_path / "a"))
-    assert swapped["changed_pixels_lighter_in_b"] == 1 and swapped["pages_lighter_in_b"] == 0
+    assert swapped["changed_pixels_lighter_in_b"] == 1
+    assert swapped["pages_lighter_in_b"] == 0
 
 
 def test_pdf_objects_ignore_only_the_producer_stamp(tmp_path):
@@ -179,7 +180,8 @@ def _copy_with_blanked_fragment(rel: str, dst: str) -> tuple[str, str]:
 def test_compare_releases_counts_ink_and_blank_changes(tiny_release, tmp_path):
     _, rel = tiny_release
     same = sens.compare_releases(rel, rel)
-    assert same["files_byte_identical"] == same["files"] and same["benchmark_json_byte_identical"]
+    assert same["files_byte_identical"] == same["files"]
+    assert same["benchmark_json_byte_identical"]
     assert same["blank_fragments"]["total"]["a"] == same["blank_fragments"]["total"]["b"]
 
     changed_file, _ = _copy_with_blanked_fragment(rel, str(tmp_path / "b"))
@@ -205,7 +207,8 @@ def test_compare_releases_overlap_requires_a_subset(tiny_release, tmp_path):
     with pytest.raises(ValueError, match="different files"):
         sens.compare_releases(rel, sup)
     r = sens.compare_releases(rel, sup, overlap_only=True)
-    assert r["files_byte_identical"] == r["files"] and r["blank_fragments"] is None
+    assert r["files_byte_identical"] == r["files"]
+    assert r["blank_fragments"] is None
     with pytest.raises(ValueError, match="not in"):
         sens.compare_releases(sup, rel, overlap_only=True)
 
@@ -216,7 +219,8 @@ def test_compare_pages_counts_paired_changes(tiny_release, tmp_path):
     assert all(v["changed"] == 0 for v in same.values())
     worse = sens.compare_pages(rel, str(root / "oracle"), rel, str(root / "random"))
     assert worse["direct_acc"]["changed"] == worse["direct_acc"]["pages"] > 0
-    assert worse["direct_acc"]["down"] == worse["direct_acc"]["changed"] and worse["direct_acc"]["up"] == 0
+    assert worse["direct_acc"]["down"] == worse["direct_acc"]["changed"]
+    assert worse["direct_acc"]["up"] == 0
     with pytest.raises(ValueError, match="missing"):
         sens.compare_pages(rel, str(root / "oracle"), rel, str(tmp_path / "nowhere"))
 
@@ -286,5 +290,7 @@ def test_compare_results_ratio_and_zero_width_interval(tmp_path):
     b.write_text(json.dumps(results(0.55, 0.1, [0.0, 0.2])))
     row = sens.compare_results(str(a), str(b))["scores"]["easy/val"]
     assert abs(row["direct_acc"]["delta_over_ci_half_width_a"] - 0.5) < 1e-9
-    assert row["perfect"]["delta_over_ci_half_width_a"] is None and row["perfect"]["changed_vs_zero_width_ci"]
-    assert row["hit1"]["delta"] == 0 and "ci95_a" not in row["hit1"]
+    assert row["perfect"]["delta_over_ci_half_width_a"] is None
+    assert row["perfect"]["changed_vs_zero_width_ci"]
+    assert row["hit1"]["delta"] == 0
+    assert "ci95_a" not in row["hit1"]

@@ -43,6 +43,7 @@ from src.bench import build, canon, docgen, evaluate  # noqa: E402
 
 SPLITS = ("val", "test-dev")
 INDEX = "index.json"
+SPEC = "benchmark.json"
 SCORE_KEYS = ("hit1", "hit5", "mrr", "perfect", "direct_acc", "neighbor_acc", "adj_f1")
 
 
@@ -197,8 +198,8 @@ def _digests(release: str, name: str) -> dict[str, str]:
 
 def _blank_counts(a: str, b: str) -> dict:
     """blank_fragments per tier/split from both benchmark.json files."""
-    sa = _read_json(os.path.join(a, "benchmark.json"))["splits"]
-    sb = _read_json(os.path.join(b, "benchmark.json"))["splits"]
+    sa = _read_json(os.path.join(a, SPEC))["splits"]
+    sb = _read_json(os.path.join(b, SPEC))["splits"]
     out = {f"{t}/{s}": {"a": sa[t][s]["blank_fragments"], "b": sb[t][s]["blank_fragments"]}
            for t in sorted(sa) for s in sorted(sa[t])}
     out["total"] = {"a": sum(v["a"] for v in out.values()), "b": sum(v["b"] for v in out.values())}
@@ -213,12 +214,12 @@ def compare_releases(a: str, b: str, overlap_only: bool = False) -> dict:
     """
     da, db = _digests(a, "CONTENT.sha256"), _digests(b, "CONTENT.sha256")
     ba, bb = _digests(a, "SHA256SUMS"), _digests(b, "SHA256SUMS")
-    keys = sorted(k for k in da if k != "benchmark.json")
+    keys = sorted(k for k in da if k != SPEC)
     if overlap_only:
         missing = [k for k in keys if k not in db]
         if missing or not keys:                         # A must be a subset of B
             raise ValueError(f"{len(missing)} file(s) of {a} are not in {b}")
-    elif keys != sorted(k for k in db if k != "benchmark.json"):
+    elif keys != sorted(k for k in db if k != SPEC):
         raise ValueError("releases hold different files")
     answers = [k for k in keys if k.startswith("answers/")]
     pngs = [k for k in keys if k.endswith(".png")]
@@ -250,10 +251,10 @@ def compare_releases(a: str, b: str, overlap_only: bool = False) -> dict:
         "fragment_pixels_identical": sum(da[k] == db[k] for k in pngs),
         "files": len(keys),
         "files_byte_identical": sum(ba[k] == bb[k] for k in keys),
-        "benchmark_json_byte_identical": None if overlap_only else ba["benchmark.json"] == bb["benchmark.json"],
+        "benchmark_json_byte_identical": None if overlap_only else ba[SPEC] == bb[SPEC],
         "blank_fragments": None if overlap_only else _blank_counts(a, b),
-        "build_env": {"a": _read_json(os.path.join(a, "benchmark.json"))["build_env"],
-                      "b": _read_json(os.path.join(b, "benchmark.json"))["build_env"]},
+        "build_env": {"a": _read_json(os.path.join(a, SPEC))["build_env"],
+                      "b": _read_json(os.path.join(b, SPEC))["build_env"]},
     }
 
 
