@@ -286,6 +286,12 @@ pinned golden digests). Source:
   counts, worker counts and output paths and requires identical files;
   `tests/test_bench_golden.py` pins one page per tier.
 - Output `workers > 1` is byte-identical to sequential builds.
+- **Geometry deterministic, pixels renderer-dependent.** Tears, poses and
+  adjacency depend only on the seed, the tier parameters and the page size,
+  never on rendered pixels. Fragment pixels come from the PyMuPDF render, so
+  another PyMuPDF version can change them. `benchmark.json` records the
+  versions used (`build_env`). How much this moves scores is tracked in
+  [#10](https://github.com/Arittra-Bag/Dataset-Maker/issues/10).
 
 Checked locally on macOS arm64 (Python 3.11). The golden digests were computed
 there, so the CI run on Linux x86_64 (Python 3.10) is the cross-platform check
