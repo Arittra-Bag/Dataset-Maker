@@ -200,7 +200,12 @@ G is the worst displacement of any convex-hull point of its mask:
 - **perfect**: direct_acc = 1.
 - **adjacency P/R/F1**: contacts between the placed masks (within 2 + 2 x
   erosion px) against ground truth; computed for every solver.
-- **Hit@1, Hit@5, MRR**: from `candidates`, if given.
+- **Hit@1, Hit@5, MRR**: from `candidates`, if given. A ground-truth
+  neighbour is a pair sharing at least 2*tau of edge, the same rule as
+  neighbor_acc. Per page, the share of fragments with such a neighbour that
+  get one ranked first (Hit@1) or in the top five (Hit@5), and the mean
+  reciprocal rank (MRR). Reported as the mean over pages that submit
+  candidates.
 - **tau curve**: direct and neighbor accuracy at 0.25, 0.5, 1 and 2% of page
   width, plus their mean (AUC).
 

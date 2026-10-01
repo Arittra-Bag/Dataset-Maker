@@ -95,8 +95,8 @@ val only). Source: [`docs/results/dm-bench-0.1.0_edge-greedy-0.1_eval-1.0.json`]
 `6fe00ba8fac1e39b62cfa78a266095ba7e24c594d0fb2b5442b1148266b185ed`.
 
 The number to read first is the hard tier: Hit@1 is 0.928 (on an average
-page, 92.8% of fragments have a true neighbour ranked first), yet the
-baseline reassembles 0 of 52 pages perfectly. Matching pieces is not the
+page, 92.8% of the fragments that have a ground-truth neighbour get one
+ranked first), yet the baseline reassembles 0 of 52 pages perfectly. Matching pieces is not the
 same as rebuilding the page, and an average score hides that gap.
 
 | tier | perfect pages | Hit@1 | direct_acc [95% CI] | neighbor_acc |
