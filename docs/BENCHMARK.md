@@ -316,8 +316,49 @@ pinned golden digests). Source:
   Fragment pixels, the per-fragment `ink_frac` in each answer and the blank
   counts in `benchmark.json` come from the PyMuPDF render, so another
   PyMuPDF version can change them. `benchmark.json` records the versions
-  used (`build_env`). How much this moves scores is tracked in
-  [#10](https://github.com/Arittra-Bag/Dataset-Maker/issues/10).
+  used (`build_env`). How much this moves scores is measured below
+  ([#10](https://github.com/Arittra-Bag/Dataset-Maker/issues/10)).
+- **PyMuPDF 1.24.10 (MuPDF 1.24.9) vs 1.28.2 (MuPDF 1.28.2), measured.**
+  Public splits val and test-dev (157 pages, 2568 fragments), all other
+  libraries identical, macOS arm64, Python 3.10. Solving and scoring run in
+  the pinned environment for both. Script: `scripts/pymupdf_sensitivity.py`.
+  Every number below is in
+  [`results/pymupdf-sensitivity_1.24.10-vs-1.28.2.json`](results/pymupdf-sensitivity_1.24.10-vs-1.28.2.json).
+  - Control: building from saved PDFs is byte-identical to a normal build.
+    All 2882 val and test-dev files, and the `edge-greedy@0.1` val and
+    test-dev results, equal the published release.
+  - Geometry: identical on all 157 pages (answers compared with only
+    `ink_frac` removed).
+  - Pixels: 156 of 157 rendered pages differ, in 1.0% of pixels on average
+    (at most 2.1%). The change has a direction: 98.8% of changed pixels are
+    lighter under 1.28.2. Over all changed pixels the mean change is +10.4 of
+    255 levels (mean absolute 10.6), the largest single channel change is 33,
+    and averaged over all pixels it is 0.11. 762 of 2568 fragments keep
+    identical pixels.
+  - Ink and blank counts: `ink_frac` changes in 783 fragments and drops in
+    779 of them (by at most 0.019). 83 fragments fall below the 1% blank
+    threshold and none rise above it, so blank fragments go from 687 to 770
+    of 2568 (+12%), up in every tier and split.
+  - PDF writing: the 90 PDFs 1.28.2 writes have the same objects and the
+    same Info metadata (dates, format) as the 1.24.10 ones, apart from the
+    producer stamp (trailer and file layout not compared). The full rebuild
+    is byte-identical to the renderer-only build. For this pair every change
+    comes from rendering.
+  - Scores, `edge-greedy@0.1`, eval_version 1.0, slice release_sha256
+    `37da2a8a...` (1.24.10) vs `b5b67ea0...` (1.28.2), not the canonical
+    release. Same pages and a deterministic solver, so every difference is
+    caused by the pixel change. Perfect pages: 0 of 157 pages change. Direct
+    accuracy changes on 2 pages (largest tier and split change 0.0019, hard
+    val), neighbour accuracy on 8 (0.0113), adjacency F1 on 11 (0.0157),
+    Hit@1 on 3 (0.0045), in both directions. The largest single-page change
+    is 0.29 (adjacency F1). Each tier and split change is at most 0.41 of the
+    half width of the pinned run's document-bootstrap 95% interval, so the
+    effect is small next to between-document uncertainty. Hit@k has no
+    interval.
+  - Scope: one solver, one synthetic corpus, one version pair, one platform.
+    Treat score differences up to about 0.016 between systems evaluated
+    under different PyMuPDF versions as unresolved, report `build_env` with
+    any score, and re-measure for other solvers.
 
 Checked locally on macOS arm64 (Python 3.11). The golden digests were computed
 there, so the CI run on Linux x86_64 (Python 3.10) is the cross-platform check
