@@ -324,6 +324,8 @@ pinned golden digests). Source:
   the pinned environment for both. Script: `scripts/pymupdf_sensitivity.py`.
   Every number below is in
   [`results/pymupdf-sensitivity_1.24.10-vs-1.28.2.json`](results/pymupdf-sensitivity_1.24.10-vs-1.28.2.json).
+  - Headline: perfect-page status was unchanged on all 157 public pages
+    across the tested PyMuPDF 1.24.10 to 1.28.2 change.
   - Control: building from saved PDFs is byte-identical to a normal build.
     All 2882 val and test-dev files, and the `edge-greedy@0.1` val and
     test-dev results, equal the published release.
@@ -356,9 +358,13 @@ pinned golden digests). Source:
     effect is small next to between-document uncertainty. Hit@k has no
     interval.
   - Scope: one solver, one synthetic corpus, one version pair, one platform.
-    Treat score differences up to about 0.016 between systems evaluated
-    under different PyMuPDF versions as unresolved, report `build_env` with
-    any score, and re-measure for other solvers.
+    For `edge-greedy@0.1` on these public splits, the largest observed tier
+    and split Hit@1 shift was 0.0045, and the largest observed tier and split
+    shift across the reported metrics was 0.0157. These are empirical
+    renderer-sensitivity scales for this baseline and tested version pair,
+    not bounds for other solvers. Learned solvers may be more sensitive to
+    rendering changes and should be measured separately. Report `build_env`
+    with any score.
 
 Checked locally on macOS arm64 (Python 3.11). The golden digests were computed
 there, so the CI run on Linux x86_64 (Python 3.10) is the cross-platform check
